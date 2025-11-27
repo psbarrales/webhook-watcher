@@ -1,4 +1,4 @@
-FROM nginx:1.21.6-alpine
+FROM node:20-alpine
 
 WORKDIR /workspace
 
@@ -9,8 +9,11 @@ COPY ./api/docker/nginx/502.html /var/www/html/502.html
 
 # Project files
 COPY ./api .
-# Installing dependencies
-RUN apk update && apk add --no-cache openssl nodejs npm yarn \
+
+# Installing dependencies (Node 20 includes corepack)
+RUN apk update \
+  && apk add --no-cache nginx openssl \
+  && corepack enable \
   && yarn \
   && yarn cache clean
 
