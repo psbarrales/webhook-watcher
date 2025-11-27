@@ -1,0 +1,29 @@
+version: '3.9'
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: api/docker/Dockerfile
+    env_file:
+      - api/.env
+    environment:
+      - WEBHOOK_STORAGE_PATH=/workspace/data/webhooks
+    volumes:
+      - api-data:/workspace/data
+    ports:
+      - '3000:80'
+
+  webapp:
+    build:
+      context: .
+      dockerfile: webapp/Dockerfile
+    environment:
+      - VITE_API_URL=http://localhost:3000
+    ports:
+      - '5173:8080'
+    depends_on:
+      - api
+
+volumes:
+  api-data:

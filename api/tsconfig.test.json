@@ -1,0 +1,9 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "types": ["jest", "node"],
+    "baseUrl": "."
+  },
+  "include": ["src/**/*.ts", "__tests__/**/*.ts", "__mocks__/**/*.ts"]
+}

@@ -1,0 +1,39 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "compilerOptions": {
+    "target": "ES2020",
+    "module": "CommonJS",
+    "moduleResolution": "Node",
+    "outDir": "dist",
+    "rootDir": "src",
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "skipLibCheck": true,
+    "resolveJsonModule": true,
+    "allowSyntheticDefaultImports": true,
+    "noImplicitAny": false,
+    "baseUrl": ".",
+    "paths": {
+      "core": ["src/core/index"],
+      "core/*": ["src/core/*"],
+      "graphql/*": ["src/graphql/*"],
+      "middleware/*": ["src/middleware/*"],
+      "models/*": ["src/models/*"],
+      "routes/*": ["src/routes/*"],
+      "application/*": ["src/application/*"],
+      "domain/*": ["src/domain/*"],
+      "infrastructure/*": ["src/infrastructure/*"],
+      "swagger": ["src/swagger/index"],
+      "swagger/*": ["src/swagger/*"],
+      "utils/*": ["src/utils/*"],
+      "types/*": ["src/types/*"],
+      "index": ["src/index"],
+      "fakeUseModule": ["__mocks__/fakeUseModule"],
+      "fakeBadRoute": ["__mocks__/fakeBadRoute"],
+      "fakeRoute": ["__mocks__/fakeRoute"],
+      "fakeRunModule": ["__mocks__/fakeRunModule"]
+    }
+  },
+  "include": ["src/**/*.ts"],
+  "exclude": ["dist", "node_modules"]
+}
