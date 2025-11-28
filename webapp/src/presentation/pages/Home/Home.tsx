@@ -2,9 +2,9 @@ import { useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
     webhookApi,
-    type WebhookRequestDetail,
     type WebhookRequestSummary
 } from "@infrastructure/api/webhooks";
+import WebhookResponseEditor from "./WebhookResponseEditor";
 
 const STORAGE_KEY = "webhook-watcher:webhookId";
 
@@ -231,6 +231,10 @@ const Home: React.FC = () => {
                             <StatPill label="Total" value={(requestsQuery.data?.length ?? 0).toString()} />
                             <StatPill label="Última" value={requestsQuery.data?.[0]?.createdAt ? formatTime(requestsQuery.data?.[0]?.createdAt ?? "") : "—"} />
                         </div>
+                    </div>
+
+                    <div className="mt-6">
+                        <WebhookResponseEditor webhookId={webhookId} />
                     </div>
 
                     {!selectedRequestId && (

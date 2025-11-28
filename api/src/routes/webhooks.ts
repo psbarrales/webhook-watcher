@@ -2,6 +2,8 @@ import { randomUUID } from 'crypto'
 import webhookService from 'infrastructure/container/webhookService'
 import type { Context } from 'koa'
 import type { RouteConfig } from 'types/router'
+import type { BodyContext } from 'types/koa'
+import type { WebhookResponseRuleInput } from 'domain/entities/WebhookResponseRule'
 
 const buildWebhookUrl = (ctx: Context, id: string): string => {
   const envBase = process.env.WEBHOOK_BASE_URL || process.env.WEBHOOK_HOST
@@ -42,6 +44,38 @@ const getRequest = async (ctx: Context) => {
   ctx.body = found
 }
 
+const getWebhook = async (ctx: Context) => {
+  const webhookId = ctx.params?.webhookId
+  if (!webhookId) {
+    ctx.throw(400, 'webhookId is required')
+    return
+  }
+  const { responses } = await webhookService.getWebhook(webhookId)
+  ctx.body = {
+    id: webhookId,
+    url: buildWebhookUrl(ctx, webhookId),
+    responses,
+  }
+}
+
+const updateWebhook = async (
+  ctx: BodyContext<{ responses?: WebhookResponseRuleInput[] }>,
+): Promise<void> => {
+  const webhookId = ctx.params?.webhookId
+  if (!webhookId) {
+    ctx.throw(400, 'webhookId is required')
+    return
+  }
+  const payload = ctx.request.body ?? {}
+  const responsesInput = Array.isArray(payload.responses) ? payload.responses : []
+  const updated = await webhookService.updateResponses(webhookId, responsesInput)
+  ctx.body = {
+    id: webhookId,
+    url: buildWebhookUrl(ctx, webhookId),
+    responses: updated,
+  }
+}
+
 const captureRequest = async (ctx: Context) => {
   const webhookId = ctx.params?.webhookId
   if (!webhookId) {
@@ -51,6 +85,7 @@ const captureRequest = async (ctx: Context) => {
 
   const body = (ctx.request as Context['request'] & { body?: unknown }).body ?? {}
   const query = ctx.request.query ?? {}
+  const subPath = resolveSubPath(ctx, webhookId)
 
   const record = await webhookService.recordRequest({
     id: randomUUID(),
@@ -72,6 +107,18 @@ const captureRequest = async (ctx: Context) => {
     contentLength: ctx.request.length ?? null,
   })
 
+  ctx.set('X-Webhook-Watcher-Request-Id', record.id)
+
+  const responseRule = await webhookService.findResponseRule(webhookId, ctx.method, subPath)
+  if (responseRule) {
+    ctx.status = responseRule.status
+    if (responseRule.contentType) {
+      ctx.set('Content-Type', responseRule.contentType)
+    }
+    ctx.body = responseRule.body === undefined ? '' : responseRule.body
+    return
+  }
+
   ctx.status = 202
   ctx.body = {
     id: record.id,
@@ -79,11 +126,36 @@ const captureRequest = async (ctx: Context) => {
   }
 }
 
+const resolveSubPath = (ctx: Context, webhookId: string): string => {
+  const wildcard = (ctx.params as Record<string, string | undefined>)?.['0']
+  if (typeof wildcard === 'string' && wildcard.length > 0) {
+    return wildcard.startsWith('/') ? wildcard : `/${wildcard}`
+  }
+  const prefix = `/hooks/${webhookId}`
+  if (ctx.path === prefix) return '/'
+  if (ctx.path.startsWith(`${prefix}/`)) {
+    const rest = ctx.path.slice(prefix.length)
+    if (!rest || rest === '/') return '/'
+    return rest.startsWith('/') ? rest : `/${rest}`
+  }
+  return '/'
+}
+
 const routes: RouteConfig[] = [
   {
     method: 'POST',
     route: '/webhooks',
     handlers: [createWebhook],
+  },
+  {
+    method: 'GET',
+    route: '/webhooks/:webhookId',
+    handlers: [getWebhook],
+  },
+  {
+    method: 'PUT',
+    route: '/webhooks/:webhookId',
+    handlers: [updateWebhook],
   },
   {
     method: 'GET',
@@ -109,4 +181,13 @@ const routes: RouteConfig[] = [
 
 export default routes
 
-export { buildWebhookUrl, captureRequest, createWebhook, getRequest, listRequests }
+export {
+  buildWebhookUrl,
+  captureRequest,
+  createWebhook,
+  getRequest,
+  getWebhook,
+  listRequests,
+  resolveSubPath,
+  updateWebhook,
+}

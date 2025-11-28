@@ -1,8 +1,7 @@
-import fs from 'fs'
-import path from 'path'
 import Database from 'better-sqlite3'
 import type { WebhookRequest, WebhookRequestSummary } from 'domain/entities/WebhookRequest'
 import type { WebhookRequestRepository } from 'domain/ports/WebhookRequestRepository'
+import { WebhookDatabaseManager } from './WebhookDatabase'
 
 const CREATE_TABLE_SQL = `
   CREATE TABLE IF NOT EXISTS requests (
@@ -32,10 +31,14 @@ const CREATE_INDEX_SQL = `
 `
 
 export class SQLiteWebhookRequestRepository implements WebhookRequestRepository {
-  private readonly databases = new Map<string, Database.Database>()
+  private readonly manager: WebhookDatabaseManager
+  private readonly prepared = new Set<string>()
 
-  constructor(private readonly basePath: string) {
-    fs.mkdirSync(basePath, { recursive: true })
+  constructor(basePathOrManager: string | WebhookDatabaseManager) {
+    this.manager =
+      typeof basePathOrManager === 'string'
+        ? new WebhookDatabaseManager(basePathOrManager)
+        : basePathOrManager
   }
 
   async prepare(webhookId: string): Promise<void> {
@@ -112,12 +115,10 @@ export class SQLiteWebhookRequestRepository implements WebhookRequestRepository 
   }
 
   private getDatabase(webhookId: string): Database.Database {
-    let db = this.databases.get(webhookId)
-    if (!db) {
-      const dbPath = path.join(this.basePath, `${webhookId}.sqlite`)
-      db = new Database(dbPath)
+    const db = this.manager.getDatabase(webhookId)
+    if (!this.prepared.has(webhookId)) {
       this.ensureSchema(db)
-      this.databases.set(webhookId, db)
+      this.prepared.add(webhookId)
     }
     return db
   }

@@ -22,6 +22,33 @@ export interface WebhookRequestDetail extends WebhookRequestSummary {
     contentLength?: number | null;
 }
 
+export interface WebhookResponseRule {
+    id: string;
+    method: string;
+    subPath: string;
+    status: number;
+    contentType?: string | null;
+    body?: unknown;
+    position: number;
+}
+
+export interface WebhookConfig {
+    id: string;
+    url: string;
+    responses: WebhookResponseRule[];
+}
+
+export interface UpdateWebhookPayload {
+    responses: Array<{
+        id?: string;
+        method: string;
+        subPath?: string;
+        status?: number;
+        contentType?: string | null;
+        body?: unknown;
+    }>;
+}
+
 const inferApiBase = (): string => {
     if (import.meta.env.VITE_API_URL) return import.meta.env.VITE_API_URL as string;
     if (typeof window !== 'undefined' && window.location.port === '5173') {
@@ -64,9 +91,22 @@ const getRequest = async (webhookId: string, requestId: string): Promise<Webhook
     return fetchJson(`/webhooks/${webhookId}/requests/${requestId}`);
 };
 
+const getWebhook = async (webhookId: string): Promise<WebhookConfig> => {
+    return fetchJson(`/webhooks/${webhookId}`);
+};
+
+const updateWebhook = async (webhookId: string, payload: UpdateWebhookPayload): Promise<WebhookConfig> => {
+    return fetchJson(`/webhooks/${webhookId}`, {
+        method: 'PUT',
+        body: JSON.stringify(payload),
+    });
+};
+
 export const webhookApi = {
     createWebhook,
     listRequests,
     getRequest,
+    getWebhook,
+    updateWebhook,
     apiBase: API_BASE,
 };

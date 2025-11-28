@@ -33,6 +33,8 @@ docker compose up --build
 ## Endpoints clave
 
 - `POST /webhooks` → crea un webhook `{ id, url }`.
+- `GET /webhooks/:webhookId` → devuelve la configuración actual, incluidas las respuestas fijas.
+- `PUT /webhooks/:webhookId` → actualiza las respuestas fijas por método/subpath de ese webhook.
 - `ALL /hooks/:webhookId` y `/hooks/:webhookId/*` → captura cualquier request.
 - `GET /webhooks/:webhookId/requests` → lista de solicitudes.
 - `GET /webhooks/:webhookId/requests/:requestId` → detalle con headers/query/body/IP.
