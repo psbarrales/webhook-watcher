@@ -6,7 +6,8 @@
   "author": "psbarrales@gmail.com",
   "license": "MIT",
   "scripts": {
-    "build": "tsc --project tsconfig.json && tsc-alias -p tsconfig.json",
+    "build": "tsc --project tsconfig.json && tsc-alias -p tsconfig.json && npm run copy:assets",
+    "copy:assets": "cp -r src/graphql/*/*.graphql dist/graphql/ 2>/dev/null || true",
     "dev": "tsx watch src/index.ts",
     "lint": "eslint \"{src,__tests__,__mocks__}/**/*.ts\"",
     "lint:fix": "eslint --fix \"{src,__tests__,__mocks__}/**/*.ts\"",
