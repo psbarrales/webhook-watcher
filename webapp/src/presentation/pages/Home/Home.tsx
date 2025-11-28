@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useParams } from "react-router-dom";
 import {
@@ -6,6 +6,7 @@ import {
     type WebhookRequestSummary
 } from "@infrastructure/api/webhooks";
 import WebhookResponseEditor from "./WebhookResponseEditor";
+import { useWebhookSocket } from "@hooks/useWebhookSocket";
 
 const STORAGE_KEY = "webhook-watcher:webhookId";
 
@@ -57,9 +58,14 @@ const Home: React.FC = () => {
     const routeRequestId = params.requestId ?? null;
     const queryClient = useQueryClient();
     const [webhookId, setWebhookId] = useState<string | null>(() => routeWebhookId ?? getStoredWebhookId());
-    const [selectedRequestId, setSelectedRequestId] = useState<string | null>(() => routeRequestId ?? null);
+    const [selectedRequestId, setSelectedRequestId] = useState<string | null>(() => routeRequestId);
     const [copied, setCopied] = useState(false);
     const [creating, setCreating] = useState(false);
+    
+    // Track if user manually selected a request to prevent auto-selection override
+    const userSelectedRef = useRef(false);
+    // Track if we're currently navigating to prevent loops
+    const isNavigatingRef = useRef(false);
 
     const webhookUrl = useMemo(
         () => (webhookId ? `${webhookApi.apiBase}/hooks/${webhookId}` : ""),
@@ -70,18 +76,25 @@ const Home: React.FC = () => {
         document.title = "Webhook Watcher";
     }, []);
 
+    // Sync webhookId from route - only when route actually changes
     useEffect(() => {
+        if (isNavigatingRef.current) return;
         if (routeWebhookId && routeWebhookId !== webhookId) {
             setWebhookId(routeWebhookId);
+            persistWebhookId(routeWebhookId);
         }
-    }, [routeWebhookId, webhookId]);
+    }, [routeWebhookId]);
 
+    // Sync selectedRequestId from route - only when route actually changes
     useEffect(() => {
-        if (routeRequestId && routeRequestId !== selectedRequestId) {
-            setSelectedRequestId(routeRequestId);
+        if (isNavigatingRef.current) return;
+        setSelectedRequestId(routeRequestId);
+        if (routeRequestId) {
+            userSelectedRef.current = true;
         }
-    }, [routeRequestId, selectedRequestId]);
+    }, [routeRequestId]);
 
+    // Bootstrap: create webhook if none exists
     useEffect(() => {
         const bootstrap = async () => {
             if (webhookId) {
@@ -91,6 +104,10 @@ const Home: React.FC = () => {
             try {
                 const { id } = await webhookApi.createWebhook();
                 setWebhookId(id);
+                persistWebhookId(id);
+                isNavigatingRef.current = true;
+                navigate(`/${id}`, { replace: true });
+                setTimeout(() => { isNavigatingRef.current = false; }, 100);
             } catch (err) {
                 console.error(err);
             } finally {
@@ -99,45 +116,34 @@ const Home: React.FC = () => {
         };
 
         void bootstrap();
-    }, [webhookId]);
+    }, [webhookId, navigate]);
 
-    useEffect(() => {
-        if (!webhookId) return;
-        persistWebhookId(webhookId);
-    }, [webhookId]);
+    useWebhookSocket(webhookId);
 
     const requestsQuery = useQuery({
         queryKey: ["webhook-requests", webhookId],
         queryFn: () => webhookApi.listRequests(webhookId ?? ""),
         enabled: Boolean(webhookId),
-        refetchInterval: 4000,
     });
 
+    // Auto-select first request only if user hasn't manually selected one and no selection exists
     useEffect(() => {
-        if (!requestsQuery.data) return;
-        if (requestsQuery.data.length === 0) {
-            if (webhookId && selectedRequestId) {
-                setSelectedRequestId(null);
-                if (routeWebhookId === webhookId && routeRequestId) {
-                    navigate(`/${webhookId}`, { replace: true });
-                }
-            }
-            return;
-        }
-        const exists = selectedRequestId && requestsQuery.data.some((r) => r.id === selectedRequestId);
-        if (exists) return;
-        const fallback = requestsQuery.data[0].id;
-        setSelectedRequestId(fallback);
+        if (!requestsQuery.data || requestsQuery.data.length === 0) return;
+        if (userSelectedRef.current || selectedRequestId) return;
+        
+        const firstId = requestsQuery.data[0].id;
+        setSelectedRequestId(firstId);
         if (webhookId) {
-            navigate(`/${webhookId}/requests/${fallback}`, { replace: true });
+            isNavigatingRef.current = true;
+            navigate(`/${webhookId}/requests/${firstId}`, { replace: true });
+            setTimeout(() => { isNavigatingRef.current = false; }, 100);
         }
-    }, [requestsQuery.data, selectedRequestId, webhookId, navigate, routeWebhookId, routeRequestId]);
+    }, [requestsQuery.data, webhookId, navigate]);
 
     const detailQuery = useQuery({
         queryKey: ["webhook-request", webhookId, selectedRequestId],
         queryFn: () => webhookApi.getRequest(webhookId ?? "", selectedRequestId ?? ""),
         enabled: Boolean(webhookId && selectedRequestId),
-        refetchInterval: 4000,
     });
 
     const handleCopy = async () => {
@@ -151,12 +157,15 @@ const Home: React.FC = () => {
 
     const handleResetWebhook = async () => {
         setCreating(true);
+        userSelectedRef.current = false;
         try {
             const { id } = await webhookApi.createWebhook();
             persistWebhookId(id);
             setWebhookId(id);
             setSelectedRequestId(null);
+            isNavigatingRef.current = true;
             navigate(`/${id}`, { replace: true });
+            setTimeout(() => { isNavigatingRef.current = false; }, 100);
             await queryClient.invalidateQueries({ queryKey: ["webhook-requests"] });
         } catch (err) {
             console.error(err);
@@ -165,23 +174,15 @@ const Home: React.FC = () => {
         }
     };
 
-    useEffect(() => {
-        if (!webhookId) return;
-        if (selectedRequestId) {
-            if (routeWebhookId === webhookId && routeRequestId === selectedRequestId) return;
-            navigate(`/${webhookId}/requests/${selectedRequestId}`, { replace: true });
-            return;
-        }
-        if (routeWebhookId === webhookId && !routeRequestId) return;
-        navigate(`/${webhookId}`, { replace: true });
-    }, [webhookId, selectedRequestId, routeWebhookId, routeRequestId, navigate]);
-
     const hasRequests = (requestsQuery.data?.length ?? 0) > 0;
 
     const handleSelectRequest = (requestId: string) => {
+        userSelectedRef.current = true;
         setSelectedRequestId(requestId);
         if (webhookId) {
+            isNavigatingRef.current = true;
             navigate(`/${webhookId}/requests/${requestId}`);
+            setTimeout(() => { isNavigatingRef.current = false; }, 100);
         }
     };
 

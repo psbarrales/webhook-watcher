@@ -3,6 +3,7 @@ import { getWebhookStoragePath } from 'infrastructure/config/storage'
 import { SQLiteWebhookRequestRepository } from 'infrastructure/persistence/sqlite/SQLiteWebhookRequestRepository'
 import { SQLiteWebhookResponseRepository } from 'infrastructure/persistence/sqlite/SQLiteWebhookResponseRepository'
 import { WebhookDatabaseManager } from 'infrastructure/persistence/sqlite/WebhookDatabase'
+import { webhookEventBus } from 'infrastructure/events/webhookEventBus'
 
 const storagePath = getWebhookStoragePath()
 const databaseManager = new WebhookDatabaseManager(storagePath)
@@ -15,6 +16,7 @@ const maxRequestsPerSecond = parsePositiveInt(process.env.WEBHOOK_RATE_LIMIT_PER
 const webhookService = new WebhookService(requestRepository, responseRepository, {
   maxRequestsPerWebhook,
   maxRequestsPerSecond,
+  eventPublisher: webhookEventBus,
 })
 
 function parsePositiveInt(value?: string): number | undefined {

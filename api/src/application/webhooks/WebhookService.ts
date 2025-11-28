@@ -4,6 +4,7 @@ import type {
   WebhookResponseRule,
   WebhookResponseRuleInput,
 } from 'domain/entities/WebhookResponseRule'
+import type { WebhookEventPublisher } from 'domain/events/WebhookEvents'
 import type { WebhookRequestRepository } from 'domain/ports/WebhookRequestRepository'
 import type { WebhookResponseRuleRepository } from 'domain/ports/WebhookResponseRuleRepository'
 
@@ -19,6 +20,7 @@ type RecordRequestInput = Omit<WebhookRequest, 'id' | 'createdAt'> & {
 export interface WebhookServiceOptions {
   maxRequestsPerWebhook?: number
   maxRequestsPerSecond?: number
+  eventPublisher?: WebhookEventPublisher
 }
 
 export class WebhookLimitError extends Error {
@@ -37,6 +39,7 @@ export class WebhookService {
   private readonly maxRequestsPerSecond: number
   private readonly rateWindowMs = 1000
   private readonly rateBuckets = new Map<string, number[]>()
+  private readonly eventPublisher?: WebhookEventPublisher
 
   constructor(
     private readonly requestRepository: WebhookRequestRepository,
@@ -45,6 +48,7 @@ export class WebhookService {
   ) {
     this.maxRequestsPerWebhook = sanitizeLimit(options.maxRequestsPerWebhook, 100)
     this.maxRequestsPerSecond = sanitizeLimit(options.maxRequestsPerSecond, 2)
+    this.eventPublisher = options.eventPublisher
   }
 
   async createWebhook(): Promise<CreateWebhookResult> {
@@ -63,6 +67,11 @@ export class WebhookService {
     await this.assertCanAcceptRequest(record.webhookId)
     await this.requestRepository.prepare(record.webhookId)
     await this.requestRepository.save(record)
+    this.eventPublisher?.emitRequestRecorded({
+      webhookId: record.webhookId,
+      summary: toSummary(record),
+      request: record,
+    })
     return record
   }
 
@@ -197,3 +206,10 @@ const sanitizeLimit = (value: number | undefined, fallback: number): number => {
   if (!Number.isFinite(value)) return fallback
   return Math.max(1, Math.trunc(value))
 }
+
+const toSummary = (request: WebhookRequest): WebhookRequestSummary => ({
+  id: request.id,
+  method: request.method,
+  path: request.path,
+  createdAt: request.createdAt,
+})
