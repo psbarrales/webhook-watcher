@@ -3,6 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useParams } from "react-router-dom";
 import {
     webhookApi,
+    type WebhookRequestDetail,
     type WebhookRequestSummary
 } from "@infrastructure/api/webhooks";
 import WebhookResponseEditor from "./WebhookResponseEditor";
@@ -51,6 +52,44 @@ const getMethodClasses = (method: string) => {
     return "bg-slate-100 text-slate-700 border border-slate-200";
 };
 
+const escapeSingleQuotes = (value: string) => value.replace(/'/g, "'\"'\"'");
+
+const buildRequestUrl = (detail: WebhookRequestDetail) => {
+    if (detail.url) return detail.url;
+
+    const qs = detail.queryString ? `?${detail.queryString}` : "";
+
+    if (detail.host) {
+        const protocol = detail.protocol ?? "http";
+        return `${protocol}://${detail.host}${detail.path}${qs}`;
+    }
+
+    return `${detail.path}${qs}`;
+};
+
+const buildCurlCommand = (detail: WebhookRequestDetail) => {
+    const url = buildRequestUrl(detail);
+    if (!url) return "";
+
+    const parts: string[] = [`curl -X ${detail.method.toUpperCase()}`];
+
+    Object.entries(detail.headers ?? {}).forEach(([key, rawValue]) => {
+        if (rawValue === undefined || rawValue === null) return;
+        const value = Array.isArray(rawValue) ? rawValue.join(", ") : typeof rawValue === "object" ? JSON.stringify(rawValue) : String(rawValue);
+        parts.push(`-H '${key}: ${escapeSingleQuotes(value)}'`);
+    });
+
+    if (detail.body !== undefined && detail.body !== null && detail.body !== "") {
+        const serializedBody =
+            typeof detail.body === "string" ? detail.body : JSON.stringify(detail.body, null, 2);
+        parts.push(`--data-raw '${escapeSingleQuotes(serializedBody)}'`);
+    }
+
+    parts.push(`'${escapeSingleQuotes(url)}'`);
+
+    return parts.join(" \\\n+  ");
+};
+
 const Home: React.FC = () => {
     const navigate = useNavigate();
     const params = useParams<{ webhookId?: string; requestId?: string }>();
@@ -60,6 +99,7 @@ const Home: React.FC = () => {
     const [webhookId, setWebhookId] = useState<string | null>(() => routeWebhookId ?? getStoredWebhookId());
     const [selectedRequestId, setSelectedRequestId] = useState<string | null>(() => routeRequestId);
     const [copied, setCopied] = useState(false);
+    const [curlCopied, setCurlCopied] = useState(false);
     const [creating, setCreating] = useState(false);
     
     // Track if user manually selected a request to prevent auto-selection override
@@ -146,6 +186,11 @@ const Home: React.FC = () => {
         enabled: Boolean(webhookId && selectedRequestId),
     });
 
+    const curlCommand = useMemo(
+        () => (detailQuery.data ? buildCurlCommand(detailQuery.data) : ""),
+        [detailQuery.data]
+    );
+
     const handleCopy = async () => {
         if (!webhookUrl) return;
         if (navigator.clipboard?.writeText) {
@@ -171,6 +216,15 @@ const Home: React.FC = () => {
             console.error(err);
         } finally {
             setCreating(false);
+        }
+    };
+
+    const handleCopyCurl = async () => {
+        if (!curlCommand) return;
+        if (navigator.clipboard?.writeText) {
+            await navigator.clipboard.writeText(curlCommand);
+            setCurlCopied(true);
+            setTimeout(() => setCurlCopied(false), 1500);
         }
     };
 
@@ -336,6 +390,31 @@ const Home: React.FC = () => {
                                     <MetaRow label="Query String" value={detailQuery.data.queryString || "—"} />
                                 </div>
                             </div>
+
+                            {curlCommand && (
+                                <div className="rounded-xl border border-indigo-200 bg-indigo-50 p-4 shadow-sm">
+                                    <div className="flex flex-wrap items-start justify-between gap-3">
+                                        <div>
+                                            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-indigo-700">cURL de la solicitud</p>
+                                            <p className="text-sm text-slate-600">Repite este request desde tu terminal.</p>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            {curlCopied && (
+                                                <span className="rounded-full bg-white/80 px-2 py-1 text-[11px] font-semibold text-indigo-700">Copiado</span>
+                                            )}
+                                            <button
+                                                onClick={handleCopyCurl}
+                                                className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-500"
+                                            >
+                                                Copiar cURL
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <pre className="mt-3 overflow-auto whitespace-pre-wrap rounded-lg border border-indigo-100 bg-white/80 p-3 text-xs leading-relaxed text-slate-800">
+                                        {curlCommand}
+                                    </pre>
+                                </div>
+                            )}
 
                             <div className="grid gap-4 md:grid-cols-2">
                                 <DataBlock title="Headers" value={detailQuery.data.headers} />
