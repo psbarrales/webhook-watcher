@@ -34,7 +34,7 @@ const CREATE_INDEX_SQL = `
 export class SQLiteWebhookRequestRepository implements WebhookRequestRepository {
   private readonly databases = new Map<string, Database.Database>()
 
-  constructor(private readonly basePath: string) {
+  constructor(private readonly basePath: string, private readonly maxDatabases = 100) {
     fs.mkdirSync(basePath, { recursive: true })
   }
 
@@ -115,6 +115,12 @@ export class SQLiteWebhookRequestRepository implements WebhookRequestRepository 
     let db = this.databases.get(webhookId)
     if (!db) {
       const dbPath = path.join(this.basePath, `${webhookId}.sqlite`)
+      const exists = fs.existsSync(dbPath)
+      if (!exists) {
+        this.ensureCapacity()
+      }
+
+      // eslint-disable-next-line new-cap
       db = new Database(dbPath)
       this.ensureSchema(db)
       this.databases.set(webhookId, db)
@@ -154,6 +160,33 @@ export class SQLiteWebhookRequestRepository implements WebhookRequestRepository 
         db.prepare(`ALTER TABLE requests ADD COLUMN ${column} ${type}`).run()
       }
     })
+  }
+
+  private ensureCapacity(): void {
+    const files = fs
+      .readdirSync(this.basePath, { withFileTypes: true })
+      .filter((dirent) => dirent.isFile() && dirent.name.endsWith('.sqlite'))
+      .map((dirent) => {
+        const fullPath = path.join(this.basePath, dirent.name)
+        const stats = fs.statSync(fullPath)
+        return {
+          path: fullPath,
+          name: dirent.name,
+          mtime: stats.mtimeMs,
+        }
+      })
+      .sort((a, b) => a.mtime - b.mtime)
+
+    if (files.length >= this.maxDatabases) {
+      const oldest = files[0]
+      const webhookId = path.basename(oldest.name, '.sqlite')
+      const openDb = this.databases.get(webhookId)
+      if (openDb) {
+        openDb.close()
+        this.databases.delete(webhookId)
+      }
+      fs.rmSync(oldest.path, { force: true })
+    }
   }
 }
 

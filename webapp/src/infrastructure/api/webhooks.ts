@@ -22,6 +22,8 @@ export interface WebhookRequestDetail extends WebhookRequestSummary {
     contentLength?: number | null;
 }
 
+const stripTrailingSlash = (value: string): string => value.replace(/\/+$/, '')
+
 const inferApiBase = (): string => {
     if (import.meta.env.VITE_API_URL) return import.meta.env.VITE_API_URL as string;
     if (typeof window !== 'undefined' && window.location.port === '5173') {
@@ -33,7 +35,14 @@ const inferApiBase = (): string => {
     return 'http://localhost:3000';
 };
 
-const API_BASE = inferApiBase();
+const API_BASE = stripTrailingSlash(inferApiBase());
+
+const inferWebhookBase = (): string => {
+    if (import.meta.env.VITE_WEBHOOK_BASE_URL) return stripTrailingSlash(import.meta.env.VITE_WEBHOOK_BASE_URL as string);
+    return API_BASE;
+};
+
+const WEBHOOK_BASE = inferWebhookBase();
 
 const fetchJson = async <T>(path: string, init?: RequestInit): Promise<T> => {
     const response = await fetch(`${API_BASE}${path}`, {
@@ -69,4 +78,5 @@ export const webhookApi = {
     listRequests,
     getRequest,
     apiBase: API_BASE,
+    webhookBase: WEBHOOK_BASE,
 };

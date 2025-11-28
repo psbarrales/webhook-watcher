@@ -30,6 +30,10 @@ docker compose up --build
 - API: `http://localhost:3000` (volumen `api-data` para los SQLite).
 - Webapp: `http://localhost:5173` (usa `VITE_API_URL=http://localhost:3000` por defecto).
 
+## Dominios configurables
+
+- Puedes servir la API en un dominio y exponer los webhooks en otro (p. ej. `api.v1.devhook.space` y `webhook.devshook.space`). Configura `WEBHOOK_PUBLIC_BASE_URL` (fallback a `WEBHOOK_BASE_URL`/`WEBHOOK_HOST`) para que la API devuelva la URL pública de los webhooks. En la webapp puedes fijar el dominio mostrado/copiar usando `VITE_WEBHOOK_BASE_URL`; las peticiones a la API siguen usando `VITE_API_URL`.
+
 ## Endpoints clave
 
 - `POST /webhooks` → crea un webhook `{ id, url }`.

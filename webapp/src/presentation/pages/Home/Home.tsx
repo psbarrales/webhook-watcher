@@ -57,7 +57,7 @@ const Home: React.FC = () => {
     const [creating, setCreating] = useState(false);
 
     const webhookUrl = useMemo(
-        () => (webhookId ? `${webhookApi.apiBase}/hooks/${webhookId}` : ""),
+        () => (webhookId ? `${webhookApi.webhookBase}/hooks/${webhookId}` : ""),
         [webhookId]
     );
 

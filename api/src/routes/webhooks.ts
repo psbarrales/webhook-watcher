@@ -4,7 +4,8 @@ import type { Context } from 'koa'
 import type { RouteConfig } from 'types/router'
 
 const buildWebhookUrl = (ctx: Context, id: string): string => {
-  const envBase = process.env.WEBHOOK_BASE_URL || process.env.WEBHOOK_HOST
+  const envBase =
+    process.env.WEBHOOK_PUBLIC_BASE_URL || process.env.WEBHOOK_BASE_URL || process.env.WEBHOOK_HOST
   const baseUrl = envBase ? envBase.replace(/\/$/, '') : `${ctx.protocol}://${ctx.host}`
   return `${baseUrl}/hooks/${id}`
 }
