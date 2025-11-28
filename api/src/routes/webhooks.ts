@@ -1,6 +1,8 @@
 import { randomUUID } from 'crypto'
+import { WebhookLimitError } from 'application/webhooks/WebhookService'
 import webhookService from 'infrastructure/container/webhookService'
 import type { Context } from 'koa'
+import type { WebhookRequest } from 'domain/entities/WebhookRequest'
 import type { RouteConfig } from 'types/router'
 import type { BodyContext } from 'types/koa'
 import type { WebhookResponseRuleInput } from 'domain/entities/WebhookResponseRule'
@@ -87,25 +89,38 @@ const captureRequest = async (ctx: Context) => {
   const query = ctx.request.query ?? {}
   const subPath = resolveSubPath(ctx, webhookId)
 
-  const record = await webhookService.recordRequest({
-    id: randomUUID(),
-    webhookId,
-    method: ctx.method,
-    path: ctx.path,
-    headers: ctx.headers,
-    query,
-    queryString: ctx.request.querystring,
-    body,
-    ip: ctx.ip,
-    url: ctx.request.href,
-    protocol: ctx.protocol,
-    host: ctx.request.host,
-    origin: ctx.request.origin,
-    referrer: ctx.get('referer') || ctx.get('referrer'),
-    userAgent: ctx.get('user-agent'),
-    contentType: ctx.request.type,
-    contentLength: ctx.request.length ?? null,
-  })
+  let record: WebhookRequest
+  try {
+    record = await webhookService.recordRequest({
+      id: randomUUID(),
+      webhookId,
+      method: ctx.method,
+      path: ctx.path,
+      headers: ctx.headers,
+      query,
+      queryString: ctx.request.querystring,
+      body,
+      ip: ctx.ip,
+      url: ctx.request.href,
+      protocol: ctx.protocol,
+      host: ctx.request.host,
+      origin: ctx.request.origin,
+      referrer: ctx.get('referer') || ctx.get('referrer'),
+      userAgent: ctx.get('user-agent'),
+      contentType: ctx.request.type,
+      contentLength: ctx.request.length ?? null,
+    })
+  } catch (error) {
+    if (error instanceof WebhookLimitError) {
+      ctx.status = error.status
+      ctx.body = {
+        error: error.message,
+        code: error.code,
+      }
+      return
+    }
+    throw error
+  }
 
   ctx.set('X-Webhook-Watcher-Request-Id', record.id)
 

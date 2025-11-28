@@ -114,6 +114,12 @@ export class SQLiteWebhookRequestRepository implements WebhookRequestRepository 
     }
   }
 
+  async count(webhookId: string): Promise<number> {
+    const db = this.getDatabase(webhookId)
+    const row = db.prepare('SELECT COUNT(1) as total FROM requests').get()
+    return typeof row?.total === 'number' ? Number(row.total) : Number(row?.total ?? 0)
+  }
+
   private getDatabase(webhookId: string): Database.Database {
     const db = this.manager.getDatabase(webhookId)
     if (!this.prepared.has(webhookId)) {

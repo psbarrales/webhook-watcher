@@ -16,11 +16,36 @@ type RecordRequestInput = Omit<WebhookRequest, 'id' | 'createdAt'> & {
   createdAt?: string
 }
 
+export interface WebhookServiceOptions {
+  maxRequestsPerWebhook?: number
+  maxRequestsPerSecond?: number
+}
+
+export class WebhookLimitError extends Error {
+  constructor(
+    message: string,
+    public readonly status = 429,
+    public readonly code: 'total_limit' | 'rate_limit' = 'rate_limit',
+  ) {
+    super(message)
+    this.name = 'WebhookLimitError'
+  }
+}
+
 export class WebhookService {
+  private readonly maxRequestsPerWebhook: number
+  private readonly maxRequestsPerSecond: number
+  private readonly rateWindowMs = 1000
+  private readonly rateBuckets = new Map<string, number[]>()
+
   constructor(
     private readonly requestRepository: WebhookRequestRepository,
     private readonly responseRepository: WebhookResponseRuleRepository,
-  ) {}
+    options: WebhookServiceOptions = {},
+  ) {
+    this.maxRequestsPerWebhook = sanitizeLimit(options.maxRequestsPerWebhook, 100)
+    this.maxRequestsPerSecond = sanitizeLimit(options.maxRequestsPerSecond, 2)
+  }
 
   async createWebhook(): Promise<CreateWebhookResult> {
     const id = randomUUID()
@@ -35,6 +60,7 @@ export class WebhookService {
       id: input.id ?? randomUUID(),
       createdAt: input.createdAt ?? new Date().toISOString(),
     }
+    await this.assertCanAcceptRequest(record.webhookId)
     await this.requestRepository.prepare(record.webhookId)
     await this.requestRepository.save(record)
     return record
@@ -97,6 +123,40 @@ export class WebhookService {
       (rule) => matchesMethod(rule.method, normalizedMethod) && matchesPath(rule.subPath, normalizedPath),
     )
   }
+
+  async assertCanAcceptRequest(webhookId: string): Promise<void> {
+    await this.requestRepository.prepare(webhookId)
+    const total = await this.requestRepository.count(webhookId)
+    if (total >= this.maxRequestsPerWebhook) {
+      throw new WebhookLimitError(
+        `El webhook alcanzó el máximo de ${this.maxRequestsPerWebhook} solicitudes almacenadas`,
+        429,
+        'total_limit',
+      )
+    }
+    if (!this.consumeRateSlot(webhookId)) {
+      throw new WebhookLimitError(
+        `Rate limit excedido (${this.maxRequestsPerSecond} req/s). Intente nuevamente en un momento`,
+        429,
+        'rate_limit',
+      )
+    }
+  }
+
+  private consumeRateSlot(webhookId: string): boolean {
+    if (this.maxRequestsPerSecond < 1) return true
+    const now = Date.now()
+    const windowStart = now - this.rateWindowMs
+    const timestamps = this.rateBuckets.get(webhookId) ?? []
+    const recent = timestamps.filter((ts) => ts > windowStart)
+    if (recent.length >= this.maxRequestsPerSecond) {
+      this.rateBuckets.set(webhookId, recent)
+      return false
+    }
+    recent.push(now)
+    this.rateBuckets.set(webhookId, recent)
+    return true
+  }
 }
 
 const normalizeMethod = (value: string): string => {
@@ -130,4 +190,10 @@ const matchesMethod = (ruleMethod: string, incoming: string): boolean => {
 
 const matchesPath = (rulePath: string, incoming: string): boolean => {
   return rulePath === '*' || rulePath === incoming
+}
+
+const sanitizeLimit = (value: number | undefined, fallback: number): number => {
+  if (typeof value !== 'number') return fallback
+  if (!Number.isFinite(value)) return fallback
+  return Math.max(1, Math.trunc(value))
 }
