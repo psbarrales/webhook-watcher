@@ -11,7 +11,9 @@ const getFirebaseAnalytics = () => {
 
   if (!analyticsInstance) {
     const app = initialize();
-    analyticsInstance = getAnalytics(app);
+    if (app) {
+      analyticsInstance = getAnalytics(app);
+    }
   }
 
   return analyticsInstance;

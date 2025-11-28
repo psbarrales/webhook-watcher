@@ -1,6 +1,11 @@
-import { getApp, getApps, initializeApp } from "firebase/app"
+import { FirebaseApp, getApp, getApps, initializeApp } from "firebase/app"
 
-export const initialize = () => {
+export const initialize = (): FirebaseApp | null => {
+    if (!import.meta.env.VITE_FIREBASE_API_KEY) {
+        console.warn("Firebase API Key is missing. Firebase will not be initialized.");
+        return null;
+    }
+
     if (!getApps().length) {
         return initializeApp({
             apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
