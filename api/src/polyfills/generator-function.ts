@@ -33,6 +33,6 @@ if (typeof generatorFunctionModule !== 'function' && typeof resolvedExport === '
       require,
       path: moduleId,
       children: [],
-    } as NodeModule
+    } as unknown as NodeModule
   }
 }

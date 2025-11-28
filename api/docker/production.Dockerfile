@@ -21,7 +21,7 @@ COPY ./api/docker/nginx/502.html /var/www/html/502.html
 COPY --from=deps /workspace/node_modules ./node_modules
 COPY ./api .
 # Installing dependencies
-RUN apk update && apk add --no-cache openssl nodejs npm
+RUN apk update && apk add --no-cache openssl nodejs npm yarn
 # Adding SSL
 RUN ["./docker/create-certificate.sh"]
 # Running the app

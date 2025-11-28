@@ -8,9 +8,9 @@ if [ -z "$NODE_ENV" ]; then
 fi
 
 if [ "$NODE_ENV" = "production" ]; then
-  npm run prod &
+  PORT=3000 npm run prod &
 else
-  npm run dev &
+  PORT=3000 npm run dev &
 fi
 
 nginx -g 'daemon off;'
