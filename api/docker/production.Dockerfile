@@ -6,7 +6,7 @@ WORKDIR /workspace
 
 COPY package.json yarn.lock ./
 
-RUN yarn install --production --frozen-lockfile --ignore-scripts && yarn cache clean
+RUN yarn install --production --ignore-scripts && yarn cache clean
 
 FROM nginx:1.21.6-alpine
 
