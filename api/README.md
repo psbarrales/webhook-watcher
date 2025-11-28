@@ -20,8 +20,8 @@ API HTTP en Koa para capturar, persistir y consultar webhooks. Cada webhook gene
 
 ```bash
 cd api
-corepack yarn install
-PORT=3000 yarn dev
+npm install
+PORT=3000 npm run dev
 ```
 
 La API quedará disponible en `http://localhost:3000`. Las bases de datos se escribirán en `data/webhooks`.

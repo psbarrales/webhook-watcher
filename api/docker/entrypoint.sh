@@ -7,10 +7,10 @@ if [ -z "$NODE_ENV" ]; then
   exit 1
 fi
 
-if [[ "$NODE_ENV" = "production" ]]; then
-  yarn prod &
+if [ "$NODE_ENV" = "production" ]; then
+  npm run prod &
 else
-  yarn dev &
+  npm run dev &
 fi
 
 nginx -g 'daemon off;'

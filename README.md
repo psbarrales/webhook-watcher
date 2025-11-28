@@ -7,8 +7,8 @@ Full-stack MVP para inspeccionar webhooks (similar a webhook.site). La API guard
 ```bash
 # API
 cd api
-corepack yarn install
-PORT=3000 WEBHOOK_STORAGE_PATH=./data/webhooks yarn dev
+npm install
+PORT=3000 WEBHOOK_STORAGE_PATH=./data/webhooks npm run dev
 
 # Webapp (en otra terminal)
 cd webapp

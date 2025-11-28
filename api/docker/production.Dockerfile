@@ -4,9 +4,9 @@ RUN apk add --no-cache libc6-compat
 
 WORKDIR /workspace
 
-COPY package.json yarn.lock ./
+COPY package.json package-lock.json ./
 
-RUN yarn install --production --ignore-scripts && yarn cache clean
+RUN npm ci --omit=dev --ignore-scripts && npm cache clean --force
 
 FROM nginx:1.21.6-alpine
 
@@ -21,7 +21,7 @@ COPY ./docker/nginx/502.html /var/www/html/502.html
 COPY --from=deps /workspace/node_modules ./node_modules
 COPY . .
 # Installing dependencies
-RUN apk update && apk add --no-cache openssl nodejs npm yarn
+RUN apk update && apk add --no-cache openssl nodejs npm
 # Adding SSL
 RUN ["./docker/create-certificate.sh"]
 # Running the app

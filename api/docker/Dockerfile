@@ -10,12 +10,11 @@ COPY ./api/docker/nginx/502.html /var/www/html/502.html
 # Project files
 COPY ./api .
 
-# Installing dependencies (Node 20 includes corepack)
+# Installing dependencies
 RUN apk update \
   && apk add --no-cache nginx openssl \
-  && corepack enable \
-  && yarn \
-  && yarn cache clean
+  && npm ci \
+  && npm cache clean --force
 
 # Adding SSL
 RUN ["./docker/create-certificate.sh"]
