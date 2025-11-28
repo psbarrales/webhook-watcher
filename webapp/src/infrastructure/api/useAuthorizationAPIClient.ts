@@ -14,13 +14,19 @@ import { AuthorizationServicePort } from '@domain/ports/out/api/AuthorizationSer
 import { initialize } from '@infrastructure/firebase/initializeApp';
 
 export const useAuthorizationAPIClient = (): AuthorizationServicePort => {
-    const auth = useMemo(() => getAuth(initialize()), []);
+    const auth = useMemo(() => {
+        const app = initialize();
+        return app ? getAuth(app) : null;
+    }, []);
 
     useEffect(() => {
-        void setPersistence(auth, browserLocalPersistence);
+        if (auth) {
+            void setPersistence(auth, browserLocalPersistence);
+        }
     }, [auth]);
 
     const login = useCallback(async (email: string, password: string): Promise<void> => {
+        if (!auth) throw new Error("Firebase Auth not initialized");
         await signInWithEmailAndPassword(auth, email, password);
     }, [auth]);
 
@@ -29,6 +35,7 @@ export const useAuthorizationAPIClient = (): AuthorizationServicePort => {
         password: string,
         displayName?: string
     ): Promise<void> => {
+        if (!auth) throw new Error("Firebase Auth not initialized");
         const credential = await createUserWithEmailAndPassword(auth, email, password);
         if (displayName) {
             await updateProfile(credential.user, { displayName });
@@ -36,16 +43,19 @@ export const useAuthorizationAPIClient = (): AuthorizationServicePort => {
     }, [auth]);
 
     const logout = useCallback(async (): Promise<void> => {
+        if (!auth) return;
         await signOut(auth);
     }, [auth]);
 
     const subscribe = useCallback((callback: (user: User | null) => void) => {
+        if (!auth) return () => {};
         return onAuthStateChanged(auth, callback);
     }, [auth]);
 
-    const getCurrentUser = useCallback(() => auth.currentUser, [auth]);
+    const getCurrentUser = useCallback(() => auth?.currentUser || null, [auth]);
 
     const refreshToken = useCallback(async () => {
+        if (!auth) return null;
         const currentUser = auth.currentUser;
         if (!currentUser) return null;
         return currentUser.getIdToken(true);

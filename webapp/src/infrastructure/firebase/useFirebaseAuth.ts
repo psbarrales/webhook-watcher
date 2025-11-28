@@ -13,7 +13,8 @@ import {
 } from "firebase/auth";
 import { initialize } from "./initializeApp";
 
-const auth = getAuth(initialize());
+const app = initialize();
+const auth = app ? getAuth(app) : null;
 const provider = new GoogleAuthProvider();
 
 export function useFirebaseAuth() {
@@ -21,6 +22,10 @@ export function useFirebaseAuth() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (!auth) {
+      setLoading(false);
+      return;
+    }
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
       setUser(firebaseUser);
       setLoading(false);
@@ -29,6 +34,10 @@ export function useFirebaseAuth() {
   }, []);
 
   const signInWithGoogle = useCallback(async () => {
+    if (!auth) {
+      console.warn("Firebase Auth not initialized");
+      return;
+    }
     try {
       await signInWithPopup(auth, provider);
     } catch (error: any) {
@@ -59,6 +68,7 @@ export function useFirebaseAuth() {
   }, []);
 
   const logout = useCallback(async () => {
+    if (!auth) return;
     await signOut(auth);
   }, []);
 

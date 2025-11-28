@@ -1,8 +1,7 @@
-import fs from 'fs'
-import path from 'path'
 import Database from 'better-sqlite3'
 import type { WebhookRequest, WebhookRequestSummary } from 'domain/entities/WebhookRequest'
 import type { WebhookRequestRepository } from 'domain/ports/WebhookRequestRepository'
+import { WebhookDatabaseManager } from './WebhookDatabase'
 
 const CREATE_TABLE_SQL = `
   CREATE TABLE IF NOT EXISTS requests (
@@ -32,10 +31,14 @@ const CREATE_INDEX_SQL = `
 `
 
 export class SQLiteWebhookRequestRepository implements WebhookRequestRepository {
-  private readonly databases = new Map<string, Database.Database>()
+  private readonly manager: WebhookDatabaseManager
+  private readonly prepared = new Set<string>()
 
-  constructor(private readonly basePath: string, private readonly maxDatabases = 100) {
-    fs.mkdirSync(basePath, { recursive: true })
+  constructor(basePathOrManager: string | WebhookDatabaseManager, maxDatabases = 100) {
+    this.manager =
+      typeof basePathOrManager === 'string'
+        ? new WebhookDatabaseManager(basePathOrManager, maxDatabases)
+        : basePathOrManager
   }
 
   async prepare(webhookId: string): Promise<void> {
@@ -111,19 +114,17 @@ export class SQLiteWebhookRequestRepository implements WebhookRequestRepository 
     }
   }
 
-  private getDatabase(webhookId: string): Database.Database {
-    let db = this.databases.get(webhookId)
-    if (!db) {
-      const dbPath = path.join(this.basePath, `${webhookId}.sqlite`)
-      const exists = fs.existsSync(dbPath)
-      if (!exists) {
-        this.ensureCapacity()
-      }
+  async count(webhookId: string): Promise<number> {
+    const db = this.getDatabase(webhookId)
+    const row = db.prepare('SELECT COUNT(1) as total FROM requests').get()
+    return typeof row?.total === 'number' ? Number(row.total) : Number(row?.total ?? 0)
+  }
 
-      // eslint-disable-next-line new-cap
-      db = new Database(dbPath)
+  private getDatabase(webhookId: string): Database.Database {
+    const db = this.manager.getDatabase(webhookId)
+    if (!this.prepared.has(webhookId)) {
       this.ensureSchema(db)
-      this.databases.set(webhookId, db)
+      this.prepared.add(webhookId)
     }
     return db
   }
@@ -160,33 +161,6 @@ export class SQLiteWebhookRequestRepository implements WebhookRequestRepository 
         db.prepare(`ALTER TABLE requests ADD COLUMN ${column} ${type}`).run()
       }
     })
-  }
-
-  private ensureCapacity(): void {
-    const files = fs
-      .readdirSync(this.basePath, { withFileTypes: true })
-      .filter((dirent) => dirent.isFile() && dirent.name.endsWith('.sqlite'))
-      .map((dirent) => {
-        const fullPath = path.join(this.basePath, dirent.name)
-        const stats = fs.statSync(fullPath)
-        return {
-          path: fullPath,
-          name: dirent.name,
-          mtime: stats.mtimeMs,
-        }
-      })
-      .sort((a, b) => a.mtime - b.mtime)
-
-    if (files.length >= this.maxDatabases) {
-      const oldest = files[0]
-      const webhookId = path.basename(oldest.name, '.sqlite')
-      const openDb = this.databases.get(webhookId)
-      if (openDb) {
-        openDb.close()
-        this.databases.delete(webhookId)
-      }
-      fs.rmSync(oldest.path, { force: true })
-    }
   }
 }
 

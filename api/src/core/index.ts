@@ -1,11 +1,13 @@
 import api from './api'
+import { startWebhookSocketServer } from 'infrastructure/websocket/WebhookSocketServer'
 
 const listen = () => console.info(`Listen on port: ${process.env.PORT}`)
 
 export default {
   init: async () => {
     const app = await api()
-    app.listen(process.env.PORT, listen)
+    const server = app.listen(process.env.PORT, listen)
+    startWebhookSocketServer(server)
   },
 }
 

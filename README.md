@@ -7,8 +7,8 @@ Full-stack MVP para inspeccionar webhooks (similar a webhook.site). La API guard
 ```bash
 # API
 cd api
-corepack yarn install
-PORT=3000 WEBHOOK_STORAGE_PATH=./data/webhooks yarn dev
+npm install
+PORT=3000 WEBHOOK_STORAGE_PATH=./data/webhooks npm run dev
 
 # Webapp (en otra terminal)
 cd webapp
@@ -37,7 +37,10 @@ docker compose up --build
 ## Endpoints clave
 
 - `POST /webhooks` → crea un webhook `{ id, url }`.
+- `GET /webhooks/:webhookId` → devuelve la configuración actual, incluidas las respuestas fijas.
+- `PUT /webhooks/:webhookId` → actualiza las respuestas fijas por método/subpath de ese webhook.
 - `ALL /hooks/:webhookId` y `/hooks/:webhookId/*` → captura cualquier request.
+  - Cada webhook admite por defecto un máximo de 100 solicitudes almacenadas y 2 requests por segundo (configurable con `WEBHOOK_MAX_REQUESTS` y `WEBHOOK_RATE_LIMIT_PER_SECOND`).
 - `GET /webhooks/:webhookId/requests` → lista de solicitudes.
 - `GET /webhooks/:webhookId/requests/:requestId` → detalle con headers/query/body/IP.
 

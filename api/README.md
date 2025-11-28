@@ -15,13 +15,15 @@ API HTTP en Koa para capturar, persistir y consultar webhooks. Cada webhook gene
 - `PORT` (default `3000`)
 - `WEBHOOK_STORAGE_PATH` (default `./data/webhooks`) → cada webhook se guarda en un archivo `*.sqlite` dentro de esta carpeta.
 - `WEBHOOK_BASE_URL` o `WEBHOOK_HOST` (opcional) → URL base usada para construir el `url` devuelto al crear un webhook (si no se define, se usa `protocol://host` de la request).
+- `WEBHOOK_MAX_REQUESTS` (default `100`) → máximo de requests almacenadas por webhook.
+- `WEBHOOK_RATE_LIMIT_PER_SECOND` (default `2`) → rate limit (requests por segundo) aplicado por webhook.
 
 ## Ejecución en local
 
 ```bash
 cd api
-corepack yarn install
-PORT=3000 yarn dev
+npm install
+PORT=3000 npm run dev
 ```
 
 La API quedará disponible en `http://localhost:3000`. Las bases de datos se escribirán en `data/webhooks`.

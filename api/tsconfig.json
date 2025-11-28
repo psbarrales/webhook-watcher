@@ -16,7 +16,6 @@
     "paths": {
       "core": ["src/core/index"],
       "core/*": ["src/core/*"],
-      "graphql/*": ["src/graphql/*"],
       "middleware/*": ["src/middleware/*"],
       "models/*": ["src/models/*"],
       "routes/*": ["src/routes/*"],
