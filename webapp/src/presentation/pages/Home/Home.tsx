@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useNavigate, useParams } from "react-router-dom";
 import {
     webhookApi,
     type WebhookRequestSummary
@@ -50,9 +51,13 @@ const getMethodClasses = (method: string) => {
 };
 
 const Home: React.FC = () => {
+    const navigate = useNavigate();
+    const params = useParams<{ webhookId?: string; requestId?: string }>();
+    const routeWebhookId = params.webhookId ?? null;
+    const routeRequestId = params.requestId ?? null;
     const queryClient = useQueryClient();
-    const [webhookId, setWebhookId] = useState<string | null>(() => getStoredWebhookId());
-    const [selectedRequestId, setSelectedRequestId] = useState<string | null>(null);
+    const [webhookId, setWebhookId] = useState<string | null>(() => routeWebhookId ?? getStoredWebhookId());
+    const [selectedRequestId, setSelectedRequestId] = useState<string | null>(() => routeRequestId ?? null);
     const [copied, setCopied] = useState(false);
     const [creating, setCreating] = useState(false);
 
@@ -66,16 +71,26 @@ const Home: React.FC = () => {
     }, []);
 
     useEffect(() => {
+        if (routeWebhookId && routeWebhookId !== webhookId) {
+            setWebhookId(routeWebhookId);
+        }
+    }, [routeWebhookId, webhookId]);
+
+    useEffect(() => {
+        if (routeRequestId && routeRequestId !== selectedRequestId) {
+            setSelectedRequestId(routeRequestId);
+        }
+    }, [routeRequestId, selectedRequestId]);
+
+    useEffect(() => {
         const bootstrap = async () => {
             if (webhookId) {
-                persistWebhookId(webhookId);
                 return;
             }
             setCreating(true);
             try {
                 const { id } = await webhookApi.createWebhook();
                 setWebhookId(id);
-                persistWebhookId(id);
             } catch (err) {
                 console.error(err);
             } finally {
@@ -86,6 +101,11 @@ const Home: React.FC = () => {
         void bootstrap();
     }, [webhookId]);
 
+    useEffect(() => {
+        if (!webhookId) return;
+        persistWebhookId(webhookId);
+    }, [webhookId]);
+
     const requestsQuery = useQuery({
         queryKey: ["webhook-requests", webhookId],
         queryFn: () => webhookApi.listRequests(webhookId ?? ""),
@@ -94,11 +114,24 @@ const Home: React.FC = () => {
     });
 
     useEffect(() => {
-        if (!requestsQuery.data?.length) return;
-        if (!selectedRequestId || !requestsQuery.data.find((r) => r.id === selectedRequestId)) {
-            setSelectedRequestId(requestsQuery.data[0].id);
+        if (!requestsQuery.data) return;
+        if (requestsQuery.data.length === 0) {
+            if (webhookId && selectedRequestId) {
+                setSelectedRequestId(null);
+                if (routeWebhookId === webhookId && routeRequestId) {
+                    navigate(`/${webhookId}`, { replace: true });
+                }
+            }
+            return;
         }
-    }, [requestsQuery.data, selectedRequestId]);
+        const exists = selectedRequestId && requestsQuery.data.some((r) => r.id === selectedRequestId);
+        if (exists) return;
+        const fallback = requestsQuery.data[0].id;
+        setSelectedRequestId(fallback);
+        if (webhookId) {
+            navigate(`/${webhookId}/requests/${fallback}`, { replace: true });
+        }
+    }, [requestsQuery.data, selectedRequestId, webhookId, navigate, routeWebhookId, routeRequestId]);
 
     const detailQuery = useQuery({
         queryKey: ["webhook-request", webhookId, selectedRequestId],
@@ -123,6 +156,7 @@ const Home: React.FC = () => {
             persistWebhookId(id);
             setWebhookId(id);
             setSelectedRequestId(null);
+            navigate(`/${id}`, { replace: true });
             await queryClient.invalidateQueries({ queryKey: ["webhook-requests"] });
         } catch (err) {
             console.error(err);
@@ -131,7 +165,25 @@ const Home: React.FC = () => {
         }
     };
 
+    useEffect(() => {
+        if (!webhookId) return;
+        if (selectedRequestId) {
+            if (routeWebhookId === webhookId && routeRequestId === selectedRequestId) return;
+            navigate(`/${webhookId}/requests/${selectedRequestId}`, { replace: true });
+            return;
+        }
+        if (routeWebhookId === webhookId && !routeRequestId) return;
+        navigate(`/${webhookId}`, { replace: true });
+    }, [webhookId, selectedRequestId, routeWebhookId, routeRequestId, navigate]);
+
     const hasRequests = (requestsQuery.data?.length ?? 0) > 0;
+
+    const handleSelectRequest = (requestId: string) => {
+        setSelectedRequestId(requestId);
+        if (webhookId) {
+            navigate(`/${webhookId}/requests/${requestId}`);
+        }
+    };
 
     return (
         <div className="min-h-screen bg-slate-50 text-slate-800">
@@ -197,7 +249,7 @@ const Home: React.FC = () => {
                             {(requestsQuery.data ?? []).map((item: WebhookRequestSummary) => (
                                 <button
                                     key={item.id}
-                                    onClick={() => setSelectedRequestId(item.id)}
+                                    onClick={() => handleSelectRequest(item.id)}
                                     className={`group flex w-full flex-col rounded-lg border px-3 py-2 text-left shadow-sm transition hover:border-indigo-200 hover:bg-indigo-50 ${selectedRequestId === item.id ? "border-indigo-200 bg-indigo-50" : "border-slate-200 bg-white"
                                         }`}
                                 >

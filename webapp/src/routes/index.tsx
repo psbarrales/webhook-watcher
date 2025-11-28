@@ -22,6 +22,14 @@ export const router = createBrowserRouter([
                 element: <Home />
             },
             {
+                path: ":webhookId",
+                element: <Home />
+            },
+            {
+                path: ":webhookId/requests/:requestId",
+                element: <Home />
+            },
+            {
                 path: "update",
                 element: <VersionUpdatePrompt />
             },
