@@ -46,6 +46,15 @@ self.addEventListener('activate', (event) => {
 
 // Intercepción de fetch: almacenamos en caché CSS, JS y otros recursos dinámicos
 self.addEventListener('fetch', (event) => {
+  const requestUrl = new URL(event.request.url);
+  
+  // No cachear llamadas a la API - dejar que pasen directamente a la red
+  if (requestUrl.pathname.startsWith('/api') || 
+      requestUrl.hostname.includes('api-production') ||
+      requestUrl.hostname.includes('railway.app')) {
+    return;
+  }
+
   if (event.request.mode === 'navigate') {
     event.respondWith(
       (async () => {

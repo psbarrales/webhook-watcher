@@ -20,6 +20,19 @@ export default defineConfig({
       devOptions: {
         enabled: false, // Activa el Service Worker en desarrollo
       },
+      workbox: {
+        navigateFallback: '/index.html',
+        runtimeCaching: [
+          {
+            urlPattern: /^https:\/\/.*\.railway\.app\/.*/i,
+            handler: 'NetworkOnly',
+          },
+          {
+            urlPattern: /\/api\/.*/i,
+            handler: 'NetworkOnly',
+          },
+        ],
+      },
       manifest: {
         name: 'My App :: Home',
         short_name: 'My App',
