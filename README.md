@@ -33,6 +33,7 @@ docker compose up --build
 ## Dominios configurables
 
 - Puedes servir la API en un dominio y exponer los webhooks en otro (p. ej. `api.v1.devhook.space` y `webhook.devshook.space`). Configura `WEBHOOK_PUBLIC_BASE_URL` (fallback a `WEBHOOK_BASE_URL`/`WEBHOOK_HOST`) para que la API devuelva la URL pública de los webhooks. En la webapp puedes fijar el dominio mostrado/copiar usando `VITE_WEBHOOK_BASE_URL`; las peticiones a la API siguen usando `VITE_API_URL`.
+- Restringe CORS a dominios concretos con `CORS_ALLOWED_ORIGINS` (coma separada). Ejemplo: `CORS_ALLOWED_ORIGINS=https://api.v1.devhook.space` permite solo llamadas desde ese origen (bloquea `webhook.devhook.space` o `webhook.staging.devhook.space`).
 
 ## Endpoints clave
 

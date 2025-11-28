@@ -27,6 +27,7 @@
   - `config/storage.ts`: resuelve ruta de almacenamiento (`WEBHOOK_STORAGE_PATH`, por defecto `./data/webhooks`) y crea carpeta.
   - `persistence/sqlite/SQLiteWebhookRequestRepository.ts`: abre un SQLite por webhook (`<webhookId>.sqlite`), crea tabla `requests`, añade columnas faltantes, serializa headers/query/body a JSON, `list` ordena por `createdAt DESC`, `find` deserializa. Mantiene un máximo de 100 bases: al crear un nuevo webhook elimina el archivo `.sqlite` más antiguo si ya hay 100.
   - `container/webhookService.ts`: ensambla repositorio SQLite y servicio.
+- **CORS**: controlable vía `CORS_ALLOWED_ORIGINS` (lista separada por comas). Ejemplo: `CORS_ALLOWED_ORIGINS=https://api.v1.devhook.space` solo emitirá `Access-Control-Allow-Origin` para ese dominio; sin valor se permite el `Origin` entrante.
 - **GraphQL (`src/graphql/Post`)**: schema demo `Post` + resolvers (`models/Post`) sobre un modelo en memoria (`src/models/Post.ts` hereda de `models/Model.ts`).
 - **Swagger (`src/swagger`)**: genera spec con `swagger-jsdoc` tomando anotaciones JSDoc de rutas/tareas.
 - **Utils**: `metrics.ts` (wrapper `prom-client`, prefijo tomado del nombre del paquete o `PREFIX_METRICS`), `query.ts` (parseo seguro de `filter` para where/fields/options).
