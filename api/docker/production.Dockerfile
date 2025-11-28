@@ -4,7 +4,7 @@ RUN apk add --no-cache libc6-compat
 
 WORKDIR /workspace
 
-COPY package.json package-lock.json ./
+COPY ./api/package.json ./api/package-lock.json ./
 
 RUN npm ci --omit=dev --ignore-scripts && npm cache clean --force
 
@@ -13,13 +13,13 @@ FROM nginx:1.21.6-alpine
 WORKDIR /workspace
 
 # Nginx files
-COPY ./docker/nginx/default.conf /etc/nginx/conf.d/default.conf
-COPY ./docker/nginx/nginx.conf /etc/nginx/nginx.conf
-COPY ./docker/nginx/502.html /var/www/html/502.html
+COPY ./api/docker/nginx/default.conf /etc/nginx/conf.d/default.conf
+COPY ./api/docker/nginx/nginx.conf /etc/nginx/nginx.conf
+COPY ./api/docker/nginx/502.html /var/www/html/502.html
 
 # Project files
 COPY --from=deps /workspace/node_modules ./node_modules
-COPY . .
+COPY ./api .
 # Installing dependencies
 RUN apk update && apk add --no-cache openssl nodejs npm
 # Adding SSL
