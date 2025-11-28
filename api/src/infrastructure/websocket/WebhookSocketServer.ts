@@ -1,5 +1,5 @@
 import type { IncomingMessage, Server as HttpServer } from 'http'
-import { WebSocketServer, type WebSocket } from 'ws'
+import { WebSocketServer, WebSocket } from 'ws'
 import type { RequestRecordedEvent } from 'domain/events/WebhookEvents'
 import { webhookEventBus } from 'infrastructure/events/webhookEventBus'
 
