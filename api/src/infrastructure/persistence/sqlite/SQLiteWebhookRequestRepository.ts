@@ -41,6 +41,10 @@ export class SQLiteWebhookRequestRepository implements WebhookRequestRepository 
         : basePathOrManager
   }
 
+  async exists(webhookId: string): Promise<boolean> {
+    return this.manager.databaseExists(webhookId)
+  }
+
   async prepare(webhookId: string): Promise<void> {
     this.getDatabase(webhookId)
   }

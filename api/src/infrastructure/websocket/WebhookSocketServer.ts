@@ -10,7 +10,9 @@ interface TrackedSocket {
 
 const SOCKET_PATH = '/ws'
 
-const startWebhookSocketServer = (server: HttpServer): void => {
+const startWebhookSocketServer = (server?: HttpServer): void => {
+  if (!server) return
+
   const wss = new WebSocketServer({ server, path: SOCKET_PATH })
   const sockets = new Set<TrackedSocket>()
 

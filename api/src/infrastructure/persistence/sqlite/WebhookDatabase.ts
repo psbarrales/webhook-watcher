@@ -9,6 +9,11 @@ class WebhookDatabaseManager {
     fs.mkdirSync(basePath, { recursive: true })
   }
 
+  databaseExists(webhookId: string): boolean {
+    const dbPath = path.join(this.basePath, `${webhookId}.sqlite`)
+    return fs.existsSync(dbPath)
+  }
+
   getDatabase(webhookId: string): Database.Database {
     let db = this.databases.get(webhookId)
     if (!db) {
