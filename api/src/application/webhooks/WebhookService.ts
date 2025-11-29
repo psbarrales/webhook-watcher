@@ -34,6 +34,17 @@ export class WebhookLimitError extends Error {
   }
 }
 
+export class WebhookNotFoundError extends Error {
+  constructor(
+    public readonly webhookId: string,
+    public readonly status = 404,
+    public readonly code = 'webhook_not_found',
+  ) {
+    super(`Webhook ${webhookId} no encontrado`)
+    this.name = 'WebhookNotFoundError'
+  }
+}
+
 export class WebhookService {
   private readonly maxRequestsPerWebhook: number
   private readonly maxRequestsPerSecond: number
@@ -64,6 +75,7 @@ export class WebhookService {
       id: input.id ?? randomUUID(),
       createdAt: input.createdAt ?? new Date().toISOString(),
     }
+    await this.assertWebhookExists(record.webhookId)
     await this.assertCanAcceptRequest(record.webhookId)
     await this.requestRepository.prepare(record.webhookId)
     await this.requestRepository.save(record)
@@ -76,16 +88,19 @@ export class WebhookService {
   }
 
   async listRequests(webhookId: string): Promise<WebhookRequestSummary[]> {
+    await this.assertWebhookExists(webhookId)
     await this.requestRepository.prepare(webhookId)
     return this.requestRepository.list(webhookId)
   }
 
   async getRequest(webhookId: string, requestId: string): Promise<WebhookRequest | undefined> {
+    await this.assertWebhookExists(webhookId)
     await this.requestRepository.prepare(webhookId)
     return this.requestRepository.find(webhookId, requestId)
   }
 
   async getWebhook(webhookId: string): Promise<{ id: string; responses: WebhookResponseRule[] }> {
+    await this.assertWebhookExists(webhookId)
     await this.responseRepository.prepare(webhookId)
     const responses = await this.responseRepository.list(webhookId)
     return { id: webhookId, responses }
@@ -95,6 +110,7 @@ export class WebhookService {
     webhookId: string,
     inputs: WebhookResponseRuleInput[],
   ): Promise<WebhookResponseRule[]> {
+    await this.assertWebhookExists(webhookId)
     await this.responseRepository.prepare(webhookId)
     const previous = await this.responseRepository.list(webhookId)
     const previousMap = new Map(previous.map((rule) => [rule.id, rule]))
@@ -124,6 +140,7 @@ export class WebhookService {
     method: string,
     subPath: string,
   ): Promise<WebhookResponseRule | undefined> {
+    await this.assertWebhookExists(webhookId)
     await this.responseRepository.prepare(webhookId)
     const rules = await this.responseRepository.list(webhookId)
     const normalizedMethod = normalizeMethod(method)
@@ -134,6 +151,7 @@ export class WebhookService {
   }
 
   async assertCanAcceptRequest(webhookId: string): Promise<void> {
+    await this.assertWebhookExists(webhookId)
     await this.requestRepository.prepare(webhookId)
     const total = await this.requestRepository.count(webhookId)
     if (total >= this.maxRequestsPerWebhook) {
@@ -165,6 +183,13 @@ export class WebhookService {
     recent.push(now)
     this.rateBuckets.set(webhookId, recent)
     return true
+  }
+
+  private async assertWebhookExists(webhookId: string): Promise<void> {
+    const exists = await this.requestRepository.exists(webhookId)
+    if (!exists) {
+      throw new WebhookNotFoundError(webhookId)
+    }
   }
 }
 

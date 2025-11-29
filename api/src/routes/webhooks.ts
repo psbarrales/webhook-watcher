@@ -1,5 +1,5 @@
 import { randomUUID } from 'crypto'
-import { WebhookLimitError } from 'application/webhooks/WebhookService'
+import { WebhookLimitError, WebhookNotFoundError } from 'application/webhooks/WebhookService'
 import webhookService from 'infrastructure/container/webhookService'
 import type { Context } from 'koa'
 import type { WebhookRequest } from 'domain/entities/WebhookRequest'
@@ -12,6 +12,15 @@ const buildWebhookUrl = (ctx: Context, id: string): string => {
     process.env.WEBHOOK_PUBLIC_BASE_URL || process.env.WEBHOOK_BASE_URL || process.env.WEBHOOK_HOST
   const baseUrl = envBase ? envBase.replace(/\/$/, '') : `${ctx.protocol}://${ctx.host}`
   return `${baseUrl}/hooks/${id}`
+}
+
+const handleWebhookError = (ctx: Context, error: unknown): boolean => {
+  if (error instanceof WebhookNotFoundError) {
+    ctx.status = error.status
+    ctx.body = { error: error.message, code: error.code }
+    return true
+  }
+  return false
 }
 
 const createWebhook = async (ctx: Context) => {
@@ -29,7 +38,12 @@ const listRequests = async (ctx: Context) => {
     ctx.throw(400, 'webhookId is required')
     return
   }
-  ctx.body = await webhookService.listRequests(webhookId)
+  try {
+    ctx.body = await webhookService.listRequests(webhookId)
+  } catch (error) {
+    if (handleWebhookError(ctx, error)) return
+    throw error
+  }
 }
 
 const getRequest = async (ctx: Context) => {
@@ -39,7 +53,12 @@ const getRequest = async (ctx: Context) => {
     ctx.throw(400, 'webhookId and requestId are required')
     return
   }
-  const found = await webhookService.getRequest(webhookId, requestId)
+  const found = await webhookService
+    .getRequest(webhookId, requestId)
+    .catch((error) => {
+      if (handleWebhookError(ctx, error)) return undefined
+      throw error
+    })
   if (!found) {
     ctx.throw(404, 'Request not found')
     return
@@ -53,11 +72,17 @@ const getWebhook = async (ctx: Context) => {
     ctx.throw(400, 'webhookId is required')
     return
   }
-  const { responses } = await webhookService.getWebhook(webhookId)
-  ctx.body = {
-    id: webhookId,
-    url: buildWebhookUrl(ctx, webhookId),
-    responses,
+  try {
+    const { responses } = await webhookService.getWebhook(webhookId)
+    ctx.body = {
+      id: webhookId,
+      url: buildWebhookUrl(ctx, webhookId),
+      responses,
+    }
+    return
+  } catch (error) {
+    if (handleWebhookError(ctx, error)) return
+    throw error
   }
 }
 
@@ -71,11 +96,16 @@ const updateWebhook = async (
   }
   const payload = ctx.request.body ?? {}
   const responsesInput = Array.isArray(payload.responses) ? payload.responses : []
-  const updated = await webhookService.updateResponses(webhookId, responsesInput)
-  ctx.body = {
-    id: webhookId,
-    url: buildWebhookUrl(ctx, webhookId),
-    responses: updated,
+  try {
+    const updated = await webhookService.updateResponses(webhookId, responsesInput)
+    ctx.body = {
+      id: webhookId,
+      url: buildWebhookUrl(ctx, webhookId),
+      responses: updated,
+    }
+  } catch (error) {
+    if (handleWebhookError(ctx, error)) return
+    throw error
   }
 }
 
@@ -112,6 +142,11 @@ const captureRequest = async (ctx: Context) => {
       contentLength: ctx.request.length ?? null,
     })
   } catch (error) {
+    if (error instanceof WebhookNotFoundError) {
+      ctx.status = error.status
+      ctx.body = { error: error.message, code: error.code }
+      return
+    }
     if (error instanceof WebhookLimitError) {
       ctx.status = error.status
       ctx.body = {
