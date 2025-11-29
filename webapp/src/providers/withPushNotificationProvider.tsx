@@ -20,7 +20,7 @@ export const WithPushNotificationsProvider: React.FC<PropsWithChildren> = ({ chi
 
     return (
         <PushNotificationsContext.Provider value={pushNotificationsService.current} >
-            {(!initialized || !pushNotificationsService.current) && (<RequestPrompt title='Permisos de notificación' message='Por favor, habilita las notificaciones para continuar.' />)}
+            {(!initialized || !pushNotificationsService.current) && (<RequestPrompt title='Notification permissions' message='Please enable notifications to continue.' />)}
             {children}
         </PushNotificationsContext.Provider>
     );

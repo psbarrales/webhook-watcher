@@ -12,12 +12,12 @@ export const WithAppProvider: React.FC<PropsWithChildren> = ({ children }) => {
     const [initialized, setInitialized] = useState(false);
     const [isConnected, setIsConnected] = useState<boolean | undefined>();
 
-    // Añadir event listeners para detectar cambios en la conexión
+    // Add event listeners to detect connection changes
     const handleOnline = () => { console.info('handleOnline'); setIsConnected(true) };
     const handleOffline = () => { console.info('handleOffline'); setIsConnected(false) };
 
     useEffect(() => {
-        // Inicializar el servicio de la app
+        // Initialize the app service
         if (!appServiceRef.current) {
             appServiceRef.current = appAdapter;
         }
@@ -29,7 +29,7 @@ export const WithAppProvider: React.FC<PropsWithChildren> = ({ children }) => {
         window.onoffline = handleOffline;
 
         return () => {
-            // Limpiar event listeners al desmontar el componente
+            // Clean up event listeners when unmounting the component
             window.removeEventListener('online', handleOnline);
             window.removeEventListener('offline', handleOffline);
             window.ononline = null;
@@ -47,7 +47,7 @@ export const WithAppProvider: React.FC<PropsWithChildren> = ({ children }) => {
 
     return (
         <AppContext.Provider value={appServiceRef.current}>
-            {(initialized && isConnected === false) && <RequestPrompt title='No hay conexión a internet' message='Por favor, verifica tu conexión y vuelve a intentarlo.' />}
+            {(initialized && isConnected === false) && <RequestPrompt title='No internet connection' message='Please check your connection and try again.' />}
             {children}
         </AppContext.Provider>
     );

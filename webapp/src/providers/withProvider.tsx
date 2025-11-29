@@ -5,7 +5,7 @@ export const withProvider = <P extends object>(
     providers: React.FC<PropsWithChildren> | React.FC<PropsWithChildren>[],
     Component: ComponentType<P>
 ): React.FC<P> => {
-    // Maneja un único provider convirtiéndolo en un array
+    // Handle a single provider by turning it into an array
     const ComposedProviders = Array.isArray(providers)
         ? composeProviders(...providers)
         : ({ children }: PropsWithChildren) => React.createElement(providers, null, children);

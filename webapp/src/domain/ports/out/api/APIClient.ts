@@ -18,7 +18,7 @@ export abstract class APIClient {
     /**
      * Realiza una solicitud GET.
      * @param url Endpoint relativo.
-     * @param params Parámetros de consulta.
+     * @param params Query parameters.
      * @returns Respuesta de la solicitud.
      */
     async get<T>(url: string, params?: Record<string, string>): Promise<HTTPResponse<T>> {
@@ -70,8 +70,8 @@ export abstract class APIClient {
     }
 
     /**
-     * Método base para realizar una solicitud.
-     * @param request Configuración de la solicitud.
+     * Base method for performing a request.
+     * @param request Request configuration.
      * @returns Respuesta de la solicitud.
      */
     protected async request<T>(config: Partial<HTTPRequest<T>>): Promise<HTTPResponse<T>> {

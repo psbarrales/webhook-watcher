@@ -44,19 +44,19 @@ export function useFirebaseAuth() {
       if (error.code === "auth/operation-not-supported-in-this-environment") {
         await signInWithRedirect(auth, provider);
       } else if (error.code === "auth/account-exists-with-different-credential") {
-        // Intentar vincular cuentas si el correo ya existe con otro método
+        // Attempt to link accounts if the email already exists with another method
         const email = error.customData?.email;
         const pendingCred = GoogleAuthProvider.credentialFromError(error);
         if (email && pendingCred) {
           const methods = await fetchSignInMethodsForEmail(auth, email);
           if (methods.includes("password")) {
-            const password = prompt("Tu cuenta ya existe con email y contraseña. Ingresa tu contraseña para vincularla:");
+            const password = prompt("Your account already exists with email and password. Enter your password to link it:");
             if (password) {
               const userCredential = await signInWithPopup(auth, provider).catch(() => null);
               if (userCredential?.user) {
                 const credential = EmailAuthProvider.credential(email, password);
                 await linkWithCredential(userCredential.user, credential);
-                console.log("Cuenta vinculada exitosamente con Google y email/password");
+                console.log("Account successfully linked with Google and email/password");
               }
             }
           }
