@@ -1,27 +1,27 @@
 import { FormEvent, useState } from "react";
 
 const Options: React.FC = () => {
-    const [platformName, setPlatformName] = useState("Mi Plataforma");
+    const [platformName, setPlatformName] = useState("My Platform");
     const [primaryColor, setPrimaryColor] = useState("#4f46e5");
-    const [welcomeMessage, setWelcomeMessage] = useState("¡Hola! Estamos felices de verte.");
+    const [welcomeMessage, setWelcomeMessage] = useState("Hi! We're happy to see you.");
 
     const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault();
-        // Aquí podrías persistir las opciones en Firestore u otra API
-        alert("Opciones guardadas. Integra tu servicio preferido para almacenarlas de forma permanente.");
+        // You could persist the options in Firestore or another API here
+        alert("Options saved. Integrate your preferred service to store them permanently.");
     };
 
     return (
         <div className="space-y-6">
             <div className="space-y-2">
-                <h1 className="text-2xl font-semibold text-slate-900">Opciones</h1>
+                <h1 className="text-2xl font-semibold text-slate-900">Settings</h1>
                 <p className="text-sm text-slate-500">
-                    Configura los aspectos esenciales de tu plataforma. Este formulario es un punto de partida totalmente editable.
+                    Configure the essential aspects of your platform. This form is a fully editable starting point.
                 </p>
             </div>
             <form onSubmit={handleSubmit} className="grid gap-6 md:grid-cols-2">
                 <div className="space-y-2">
-                    <label htmlFor="platformName" className="text-sm font-medium text-slate-700">Nombre de la plataforma</label>
+                    <label htmlFor="platformName" className="text-sm font-medium text-slate-700">Platform name</label>
                     <input
                         id="platformName"
                         type="text"
@@ -31,7 +31,7 @@ const Options: React.FC = () => {
                     />
                 </div>
                 <div className="space-y-2">
-                    <label htmlFor="primaryColor" className="text-sm font-medium text-slate-700">Color primario</label>
+                    <label htmlFor="primaryColor" className="text-sm font-medium text-slate-700">Primary color</label>
                     <input
                         id="primaryColor"
                         type="color"
@@ -41,7 +41,7 @@ const Options: React.FC = () => {
                     />
                 </div>
                 <div className="md:col-span-2 space-y-2">
-                    <label htmlFor="welcomeMessage" className="text-sm font-medium text-slate-700">Mensaje de bienvenida</label>
+                    <label htmlFor="welcomeMessage" className="text-sm font-medium text-slate-700">Welcome message</label>
                     <textarea
                         id="welcomeMessage"
                         rows={4}
@@ -55,7 +55,7 @@ const Options: React.FC = () => {
                         type="submit"
                         className="rounded-lg bg-indigo-600 px-4 py-2 text-white transition hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-200"
                     >
-                        Guardar cambios
+                        Save changes
                     </button>
                 </div>
             </form>

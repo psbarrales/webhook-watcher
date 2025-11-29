@@ -24,15 +24,15 @@ export interface HTTPResponse<T> {
 
 export interface HTTPService {
     /**
-     * Realiza una solicitud HTTP genérica.
-     * @param config Configuración de la solicitud HTTP.
+     * Performs a generic HTTP request.
+     * @param config HTTP request configuration.
      * @returns Una promesa que se resuelve con una respuesta HTTP.
      */
     request<T>(config: HTTPRequest<T>): Promise<HTTPResponse<T>>;
 
     /**
-     * Permite actualizar la configuración de la instancia de HTTPService.
-     * @param config Configuración parcial que se aplicará.
+     * Allows updating the HTTPService instance configuration.
+     * @param config Partial configuration to apply.
      */
     setConfig(config: HTTPRequest<any>): void;
 }

@@ -12,7 +12,7 @@ export const {
     const authAPIRef = useRef(useAuthorizationAPIClient());
     const authorization = useAuthorizationUseCase(authAPIRef.current);
 
-    // Integración con Firebase Authentication
+    // Integration with Firebase Authentication
     const { user: userGoogle, loading: loadingGoogle, signInWithGoogle, logout: logoutGoogle } = useFirebaseAuth();
 
     return {

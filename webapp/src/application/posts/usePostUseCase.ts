@@ -33,7 +33,7 @@ export const usePostUseCase = (postClient: PostClient) => {
                     title: post.title.toUpperCase(),
                 }));
 
-                // Actualizar la referencia con los datos más recientes
+                // Update the reference with the latest data
                 postsRef.current = transformedPosts;
 
                 return transformedPosts;
@@ -53,7 +53,7 @@ export const usePostUseCase = (postClient: PostClient) => {
         };
     };
 
-    // Método para filtrar posts por título (utilizando la referencia)
+    // Method to filter posts by title (using the reference)
     const filterPostsByTitle = useCallback((searchTerm: string) => {
         // Usar postsRef en lugar de llamar usePosts()
         const posts = postsRef.current;
@@ -65,12 +65,12 @@ export const usePostUseCase = (postClient: PostClient) => {
         );
     }, []);
 
-    // Método para obtener el contador de posts
+    // Method to get the posts counter
     const getPostCount = useCallback(() => {
         return postCount;
     }, [postCount]);
 
-    // Exponer todos los métodos y estados necesarios
+    // Expose all required methods and state
     return {
         usePosts,
         filterPostsByTitle,

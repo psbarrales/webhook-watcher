@@ -10,17 +10,17 @@ const AppLayout: React.FC = () => {
                 <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
                     <Link to="/" className="flex items-center gap-2 text-lg font-semibold text-slate-900">
                         <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-indigo-600 text-white">⚙️</span>
-                        Plataforma Template
+                        Platform Template
                     </Link>
                     <div className="flex items-center gap-4 text-sm text-slate-600">
                         {auth.user?.displayName && (
-                            <span className="font-medium text-slate-900">Hola, {auth.user.displayName}</span>
+                            <span className="font-medium text-slate-900">Hi, {auth.user.displayName}</span>
                         )}
                         <button
                             onClick={() => auth.logout()}
                             className="rounded-lg border border-slate-200 px-3 py-1.5 font-medium text-slate-600 transition hover:border-slate-300 hover:text-slate-900"
                         >
-                            Cerrar sesión
+                            Sign out
                         </button>
                     </div>
                 </div>
@@ -28,7 +28,7 @@ const AppLayout: React.FC = () => {
             <div className="mx-auto flex max-w-6xl flex-1 flex-col gap-6 px-6 py-8 lg:flex-row">
                 <aside className="lg:w-64">
                     <nav className="rounded-2xl border border-slate-200 bg-white p-4">
-                        <p className="px-2 text-xs font-semibold uppercase tracking-wide text-slate-500">Panel</p>
+                        <p className="px-2 text-xs font-semibold uppercase tracking-wide text-slate-500">Workspace</p>
                         <ul className="mt-2 space-y-1">
                             <li>
                                 <NavLink
@@ -55,7 +55,7 @@ const AppLayout: React.FC = () => {
                                         }`
                                     }
                                 >
-                                    <span>Opciones</span>
+                                    <span>Settings</span>
                                 </NavLink>
                             </li>
                             <li>
@@ -69,7 +69,7 @@ const AppLayout: React.FC = () => {
                                         }`
                                     }
                                 >
-                                    <span>Soporte</span>
+                                    <span>Support</span>
                                 </NavLink>
                             </li>
                         </ul>

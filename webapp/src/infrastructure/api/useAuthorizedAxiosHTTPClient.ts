@@ -5,11 +5,11 @@ import { merge } from 'lodash';
 import { IAuthorizationPort } from '@domain/ports/in/IAuthorizationPort';
 
 export const useAuthorizedAxiosHTTPClient = (auth: IAuthorizationPort, config?: Partial<HTTPRequest<any>>): HTTPService => {
-    const { token, logout } = auth; // Obtener el token desde el contexto de autorización
-    const httpConfigRef = useRef(mapToAxiosConfig(config || {}, token ?? undefined)); // Inicializar la configuración
+    const { token, logout } = auth; // Get the token from the authorization context
+    const httpConfigRef = useRef(mapToAxiosConfig(config || {}, token ?? undefined)); // Initialize the configuration
     const axiosInstanceRef = useRef<AxiosInstance>(axios.create(httpConfigRef.current)); // Crear instancia de Axios
 
-    // Actualizar configuración y crear nueva instancia de Axios si el token cambia
+    // Update configuration and create a new Axios instance if the token changes
     useEffect(() => {
         httpConfigRef.current = mapToAxiosConfig(merge(httpConfigRef.current, config), token ?? undefined);
         axiosInstanceRef.current = axios.create(httpConfigRef.current);
@@ -20,7 +20,7 @@ export const useAuthorizedAxiosHTTPClient = (auth: IAuthorizationPort, config?: 
             (error) => {
                 if (error.response?.status === 401) {
                     console.warn('Unauthorized: Token expired or invalid. Logging out...');
-                    logout(); // Llamar a la función de logout
+                    logout(); // Call the logout function
                 }
                 return Promise.reject(error); // Rechazar el error para que pueda ser manejado aguas abajo
             }
@@ -31,14 +31,14 @@ export const useAuthorizedAxiosHTTPClient = (auth: IAuthorizationPort, config?: 
         };
     }, [token, logout]);
 
-    // Función para actualizar manualmente la configuración
+    // Function to manually update the configuration
     const setConfig = useCallback((config: Partial<HTTPRequest<any>>) => {
         const updatedConfig = mapToAxiosConfig(merge(httpConfigRef.current, config), token ?? undefined);
         httpConfigRef.current = updatedConfig;
         axiosInstanceRef.current = axios.create(updatedConfig);
     }, [token]);
 
-    // Función de solicitud HTTP
+    // HTTP request function
     const request = useCallback(async <T>(config: HTTPRequest<T>): Promise<HTTPResponse<T>> => {
         const axiosConfig = mapToAxiosConfig(merge(httpConfigRef.current, config), token ?? undefined);
 
@@ -80,7 +80,7 @@ export const useAuthorizedAxiosHTTPClient = (auth: IAuthorizationPort, config?: 
     };
 };
 
-// Función para mapear la configuración del cliente HTTP
+// Function to map the HTTP client configuration
 function mapToAxiosConfig<T>(
     config: Partial<HTTPRequest<T>>,
     token?: string | null
@@ -104,7 +104,7 @@ function mapToAxiosConfig<T>(
 }
 
 
-// Función para convertir los encabezados a un formato plano
+// Function to convert headers to a flat format
 function convertHeaders(headers: any): Record<string, string> {
     const result: Record<string, string> = {};
     if (headers) {

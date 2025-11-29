@@ -14,7 +14,7 @@ export const FrameworkProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
             // Si hay historial disponible, retrocede
             if (window.history.length > 1) {
-                window.history.back(); // Retrocede una página en el historial del navegador
+                window.history.back(); // Go back one page in the browser history
             } else {
                 console.warn('No hay historial para retroceder.');
             }

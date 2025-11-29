@@ -12,7 +12,7 @@ const RequestPrompt: React.FC<RequestPromptProps> = ({
     title,
     message,
     onConfirm,
-    confirmButtonText = "Aceptar",
+    confirmButtonText = "Accept",
     version
 }) => {
     const [show, setShow] = useState(true)

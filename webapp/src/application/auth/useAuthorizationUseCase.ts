@@ -7,14 +7,14 @@ const parseErrorMessage = (error: unknown): string => {
     if (error instanceof FirebaseError) {
         switch (error.code) {
             case 'auth/invalid-email':
-                return 'El correo electrónico no es válido.';
+                return 'The email address is not valid.';
             case 'auth/user-not-found':
             case 'auth/wrong-password':
-                return 'Credenciales incorrectas. Revisa tu correo y contraseña.';
+                return 'Incorrect credentials. Check your email and password.';
             case 'auth/email-already-in-use':
-                return 'Ya existe una cuenta asociada a este correo electrónico.';
+                return 'An account already exists for this email address.';
             case 'auth/weak-password':
-                return 'La contraseña debe tener al menos 6 caracteres.';
+                return 'The password must be at least 6 characters long.';
             default:
                 return error.message;
         }

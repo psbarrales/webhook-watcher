@@ -38,8 +38,8 @@ export const createFirebaseAnalyticsAdapter = (): AnalyticsPort => {
   const analytics = getFirebaseAnalytics();
 
   if (!analytics) {
-    return createNoopAnalytics("Firebase Analytics no está disponible en este entorno.");
-  }
+    return createNoopAnalytics("Firebase Analytics is not available in this environment.");
+}
 
   return {
     async setUserId(userId: string): Promise<void> {
