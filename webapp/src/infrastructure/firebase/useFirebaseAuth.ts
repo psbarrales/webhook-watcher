@@ -56,7 +56,6 @@ export function useFirebaseAuth() {
               if (userCredential?.user) {
                 const credential = EmailAuthProvider.credential(email, password);
                 await linkWithCredential(userCredential.user, credential);
-                console.log("Account successfully linked with Google and email/password");
               }
             }
           }

@@ -141,7 +141,7 @@ const WebhookResponseEditor: React.FC<Props> = ({ webhookId }) => {
 
             {configQuery.isError && (
                 <div className="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-3 text-sm text-amber-800">
-                    We couldn't load the configuration. We'll retry automatically.
+                    We couldn&apos;t load the configuration. We&apos;ll retry automatically.
                 </div>
             )}
 

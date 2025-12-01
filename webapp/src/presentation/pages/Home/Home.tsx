@@ -288,7 +288,7 @@ const Home: React.FC = () => {
                     <div className="flex-1 overflow-auto px-3 pb-4">
                         {requestsQuery.error && (
                             <div className="mb-3 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
-                                We couldn't load the list. Retrying...
+                                We couldn&apos;t load the list. Retrying...
                             </div>
                         )}
                         {!hasRequests && (
@@ -348,7 +348,7 @@ const Home: React.FC = () => {
 
                     {detailQuery.error && (
                         <div className="mt-3 rounded-md border border-amber-200 bg-amber-50 px-3 py-3 text-sm text-amber-800">
-                            We couldn't load the request details. Try again in a few seconds.
+                            We couldn&apos;t load the request details. Try again in a few seconds.
                         </div>
                     )}
 
