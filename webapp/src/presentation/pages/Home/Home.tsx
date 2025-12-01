@@ -101,6 +101,7 @@ const Home: React.FC = () => {
     const [copied, setCopied] = useState(false);
     const [curlCopied, setCurlCopied] = useState(false);
     const [creating, setCreating] = useState(false);
+    const [curlCollapsed, setCurlCollapsed] = useState(true);
     
     // Track if user manually selected a request to prevent auto-selection override
     const userSelectedRef = useRef(false);
@@ -335,25 +336,25 @@ const Home: React.FC = () => {
                         </div>
                     </div>
 
-                    <div className="mt-5">
+                    <div className="mt-3">
                         <WebhookResponseEditor webhookId={webhookId} />
                     </div>
 
                     {!selectedRequestId && (
-                        <div className="mt-8 rounded-md border border-dashed border-slate-200 bg-slate-50 px-4 py-5 text-center text-sm text-slate-500">
+                        <div className="mt-4 rounded-md border border-dashed border-slate-200 bg-slate-50 px-3 py-4 text-center text-sm text-slate-500">
                             Send any payload to your webhook URL to see it here.
                         </div>
                     )}
 
                     {detailQuery.error && (
-                        <div className="mt-5 rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+                        <div className="mt-3 rounded-md border border-amber-200 bg-amber-50 px-3 py-3 text-sm text-amber-800">
                             We couldn't load the request details. Try again in a few seconds.
                         </div>
                     )}
 
                     {detailQuery.data && (
-                        <div className="mt-5 space-y-5">
-                            <div className="grid gap-4 md:grid-cols-2">
+                        <div className="mt-3 space-y-3">
+                            <div className="grid gap-3 md:grid-cols-2">
                                 <InfoCard
                                     title="Path"
                                     subtitle={`${detailQuery.data.method} · ${formatTime(detailQuery.data.createdAt)}`}
@@ -366,13 +367,13 @@ const Home: React.FC = () => {
                                 />
                             </div>
 
-                            <div className="grid gap-4 md:grid-cols-3">
+                            <div className="grid gap-3 md:grid-cols-3">
                                 <InfoCard title="Webhook ID" value={detailQuery.data.webhookId} />
                                 <InfoCard title="Request ID" value={detailQuery.data.id} />
                                 <InfoCard title="Host" value={detailQuery.data.host || (detailQuery.data.headers?.host ? String(detailQuery.data.headers.host) : "—")} />
                             </div>
 
-                            <div className="rounded-lg border border-slate-200 bg-white p-4">
+                            <div className="rounded-lg border border-slate-200 bg-white p-3">
                                 <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">Metadata</p>
                                 <div className="mt-3 grid gap-2 md:grid-cols-2 lg:grid-cols-3">
                                     <MetaRow label="URL" value={detailQuery.data.url || "—"} />
@@ -387,13 +388,20 @@ const Home: React.FC = () => {
                             </div>
 
                             {curlCommand && (
-                                <div className="rounded-lg border border-slate-200 bg-white p-4">
-                                    <div className="flex flex-wrap items-start justify-between gap-3">
+                                <div className="rounded-lg border border-slate-200 bg-white p-3">
+                                    <div className="flex flex-wrap items-start justify-between gap-2">
                                         <div>
                                             <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">Request cURL</p>
                                             <p className="text-sm text-slate-600">Replay this request from your terminal.</p>
                                         </div>
                                         <div className="flex items-center gap-2">
+                                            <button
+                                                type="button"
+                                                onClick={() => setCurlCollapsed((prev) => !prev)}
+                                                className="rounded-md border border-slate-200 bg-white px-2 py-1 text-xs font-semibold text-slate-700 transition hover:border-indigo-200 hover:text-indigo-700"
+                                            >
+                                                {curlCollapsed ? "Expand" : "Collapse"}
+                                            </button>
                                             {curlCopied && (
                                                 <span className="rounded-full bg-slate-100 px-2 py-1 text-[11px] font-semibold text-slate-700">Copied</span>
                                             )}
@@ -405,20 +413,22 @@ const Home: React.FC = () => {
                                             </button>
                                         </div>
                                     </div>
-                                    <pre className="mt-3 overflow-auto whitespace-pre-wrap rounded-md border border-slate-200 bg-slate-50 p-3 text-xs leading-relaxed text-slate-900">
-                                        {curlCommand}
-                                    </pre>
+                                    {!curlCollapsed && (
+                                        <pre className="mt-3 overflow-auto whitespace-pre-wrap rounded-md border border-slate-200 bg-slate-50 p-3 text-xs leading-relaxed text-slate-900">
+                                            {curlCommand}
+                                        </pre>
+                                    )}
                                 </div>
                             )}
 
-                            <div className="grid gap-4 md:grid-cols-2">
+                            <div className="grid gap-3 md:grid-cols-2">
                                 <DataBlock title="Headers" value={detailQuery.data.headers} />
                                 <DataBlock title="Query Params" value={detailQuery.data.query} />
                             </div>
 
                             <div>
                                 <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">Body</p>
-                                <pre className="mt-2 max-h-[400px] overflow-auto rounded-md border border-slate-200 bg-slate-50 p-4 text-sm leading-relaxed text-slate-900">
+                                <pre className="mt-2 max-h-[400px] overflow-auto rounded-md border border-slate-200 bg-slate-50 p-3 text-sm leading-relaxed text-slate-900">
                                     {pretty(detailQuery.data.body)}
                                 </pre>
                             </div>
@@ -426,7 +436,7 @@ const Home: React.FC = () => {
                     )}
 
                     {copied && (
-                        <div className="mt-4 inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-700">
+                        <div className="mt-2 inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-700">
                             URL copied to clipboard
                         </div>
                     )}
@@ -444,7 +454,7 @@ const MetaRow: React.FC<{ label: string; value: string }> = ({ label, value }) =
 );
 
 const DataBlock: React.FC<{ title: string; value: Record<string, unknown> }> = ({ title, value }) => (
-    <div className="rounded-md border border-slate-200 bg-white p-4">
+    <div className="rounded-md border border-slate-200 bg-white p-3">
         <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">{title}</p>
         <pre className="mt-2 max-h-48 overflow-auto text-sm text-slate-900">
             {pretty(value)}
@@ -453,7 +463,7 @@ const DataBlock: React.FC<{ title: string; value: Record<string, unknown> }> = (
 );
 
 const InfoCard: React.FC<{ title: string; subtitle?: string; value: string }> = ({ title, subtitle, value }) => (
-    <div className="rounded-md border border-slate-200 bg-white p-4">
+    <div className="rounded-md border border-slate-200 bg-white p-3">
         <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">{title}</p>
         <p className="mt-2 break-all text-sm font-semibold text-slate-900">{value}</p>
         {subtitle && <p className="text-xs text-slate-500">{subtitle}</p>}
