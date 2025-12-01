@@ -23,7 +23,7 @@ const NotFound: React.FC = () => {
                 <div className="max-w-md">
                     <div className="text-9xl font-extrabold text-gray-400 animate-pulse">404</div>
                     <h1 className="mt-4 text-3xl font-bold text-gray-900 tracking-tight sm:text-4xl">Page not found</h1>
-                    <p className="mt-6 text-base text-gray-500">Sorry, we couldn't find the page you're looking for.</p>
+                    <p className="mt-6 text-base text-gray-500">Sorry, we couldn&apos;t find the page you&apos;re looking for.</p>
                     <div className="mt-10">
                         <button
                             onClick={() => navigate('/')}

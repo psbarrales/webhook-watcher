@@ -11,7 +11,7 @@ const VersionUpdatePrompt: React.FC = () => {
                 </div>
                 <div className="p-6 space-y-4">
                     <h1 className="text-2xl font-bold text-center text-gray-800">Update available</h1>
-                    <p className="text-center text-gray-600">There's a new update available</p>
+                    <p className="text-center text-gray-600">There&apos;s a new update available</p>
                     <p className="text-center text-indigo-600 font-medium text-lg">v0.0.1</p>
                     <div className="mt-4 flex justify-center">
                         <img
